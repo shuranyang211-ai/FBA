@@ -3,1112 +3,255 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>FBA发货决策助手 V3</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<meta name="description" content="批量产品智能装箱、推荐采购纸箱尺寸与3D装箱展示">
+<title>智能装箱规划器｜批量箱规 + 3D装箱</title>
 <style>
-:root{
-  --bg:#f5f7fb;--card:#fff;--line:#e4e8ef;--text:#172033;--muted:#667085;
-  --blue:#2563eb;--blue2:#eff6ff;--green:#059669;--green2:#ecfdf5;
-  --amber:#d97706;--amber2:#fff7ed;--red:#dc2626;--red2:#fef2f2;
-  --shadow:0 8px 26px rgba(15,23,42,.06)
-}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);font-family:Inter,"PingFang SC","Microsoft YaHei",system-ui,-apple-system,sans-serif;color:var(--text)}
-.wrap{max-width:1480px;margin:auto;padding:24px}
-.top{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:18px}
-h1{font-size:29px;margin:0 0 7px;letter-spacing:-.4px}h2{font-size:18px;margin:0}h3{font-size:15px;margin:0}
-.sub{margin:0;color:var(--muted);line-height:1.65}.badge{background:#111827;color:#fff;border-radius:999px;padding:9px 13px;font-size:12px;white-space:nowrap}
-.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
-.step{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:13px;color:var(--muted)}
-.step b{color:var(--text);margin-right:7px}.step.active{border-color:#bfdbfe;background:#f8fbff}
-.card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);margin-bottom:16px}
-.section{padding:18px}.section-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px}
-.upload{border:2px dashed #cbd5e1;background:#f8fafc;border-radius:13px;padding:17px;text-align:center}
-.upload input{max-width:520px}.status{margin-top:8px;font-size:12px;color:var(--muted);line-height:1.55}.ok{color:var(--green)}.warn{color:var(--amber)}.bad{color:var(--red)}
-.grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}.span2{grid-column:span 2}
-.field label{display:block;color:var(--muted);font-size:11.5px;margin-bottom:5px}
-input,select{width:100%;border:1px solid #d0d5dd;border-radius:9px;padding:9px 10px;font:inherit;background:#fff;color:var(--text)}
-input:focus,select:focus{outline:2px solid #dbeafe;border-color:#60a5fa}
-button{border:1px solid var(--line);background:#fff;border-radius:9px;padding:9px 12px;font-weight:650;cursor:pointer;color:var(--text)}
-button:hover{background:#f8fafc}button.primary{background:var(--blue);border-color:var(--blue);color:#fff}button.danger{color:var(--red)}
-.btns{display:flex;gap:8px;flex-wrap:wrap}
-.ship-table{display:grid;grid-template-columns:1.05fr 1fr .65fr .72fr .72fr .72fr .78fr .72fr 38px;gap:7px;align-items:end;padding:10px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px}
-.ship-table .field label{font-size:10.5px}.ship-table button{height:38px;padding:0}
-.help{font-size:12px;color:var(--muted);line-height:1.65}
-summary{cursor:pointer;font-weight:700;font-size:13px;color:#344054}.advanced{margin-top:14px;border-top:1px dashed var(--line);padding-top:12px}
-.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin-bottom:16px}.kpi{padding:15px}.kpi .l{font-size:11.5px;color:var(--muted);margin-bottom:6px}.kpi .v{font-size:23px;font-weight:800;letter-spacing:-.3px}.kpi .s{font-size:11px;color:var(--muted);margin-top:4px}
-.diagnostics{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.diag{border:1px solid var(--line);border-radius:11px;padding:11px;background:#fff;font-size:12px;line-height:1.55}.diag b{display:block;margin-bottom:3px}.diag.pass{border-color:#a7f3d0;background:#f0fdf4}.diag.fail{border-color:#fed7aa;background:#fff7ed}
-.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px}table{width:100%;border-collapse:collapse;min-width:1450px}th,td{padding:10px 9px;border-bottom:1px solid var(--line);font-size:12px;text-align:left;vertical-align:top}th{position:sticky;top:0;background:#f8fafc;color:#475467;z-index:1;white-space:nowrap}tr:last-child td{border-bottom:none}.bestrow{background:#f0fdf4}.money{font-weight:800;font-variant-numeric:tabular-nums}.muted{color:var(--muted)}.notes{max-width:350px;line-height:1.55;white-space:normal}.source{font-size:10.5px;color:var(--muted);margin-top:4px}
-.tag{display:inline-block;border-radius:999px;padding:3px 7px;font-size:10.5px;background:#eff6ff;color:#1d4ed8;white-space:nowrap}.tag.g{background:#dcfce7;color:#047857}.tag.a{background:#fff7ed;color:#c2410c}.tag.r{background:#fee2e2;color:#b91c1c}.tag.gray{background:#f2f4f7;color:#475467}
-.advice-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.advice-card{border:1px solid var(--line);border-radius:12px;padding:14px;line-height:1.6;font-size:12.5px}.advice-card.best{border-color:#a7f3d0;background:#f0fdf4}.advice-card b{font-size:14px}.callout{padding:13px 14px;border-radius:11px;background:var(--blue2);border:1px solid #bfdbfe;line-height:1.7;font-size:12.5px}
-.excluded{max-height:350px;overflow:auto}.hidden{display:none}
-.footer{font-size:11.5px;color:var(--muted);line-height:1.6;padding:0 3px 20px}
-
-.wh-field{position:relative}
-.wh-dropdown{display:none;position:absolute;z-index:50;left:0;right:0;top:100%;margin-top:4px;background:#fff;border:1px solid #d0d5dd;border-radius:10px;box-shadow:0 12px 30px rgba(15,23,42,.16);max-height:280px;overflow:auto}
-.wh-dropdown.show{display:block}
-.wh-item{padding:9px 10px;border-bottom:1px solid #f2f4f7;cursor:pointer}
-.wh-item:last-child{border-bottom:none}.wh-item:hover,.wh-item.active{background:#eff6ff}
-.wh-code{font-weight:800;margin-right:7px}.wh-meta{font-size:11px;color:#667085;margin-top:2px}
-.wh-status{font-size:10.5px;margin-top:4px;line-height:1.35}
-.wh-status.ok{color:#047857}.wh-status.warn{color:#c2410c}.wh-freight{display:inline-block;margin-left:6px;padding:2px 6px;border-radius:999px;background:#ecfdf5;color:#047857;font-size:10px}.wh-nzip{display:inline-block;margin-left:6px;padding:2px 6px;border-radius:999px;background:#fff7ed;color:#c2410c;font-size:10px}
-@media(max-width:980px){
- .top{flex-direction:column}.steps{grid-template-columns:1fr}.grid{grid-template-columns:1fr 1fr}.span2{grid-column:span 2}
- .kpis{grid-template-columns:1fr 1fr}.diagnostics{grid-template-columns:1fr 1fr}.advice-grid{grid-template-columns:1fr}
- .ship-table{grid-template-columns:1fr 1fr 1fr}.ship-table button{width:100%}
-}
+:root{--ink:#122033;--muted:#66758a;--line:#dde5ef;--soft:#f6f8fb;--blue:#2563eb;--blue2:#1d4ed8;--sky:#eef5ff;--green:#087a55;--greenbg:#eaf8f2;--amber:#9a5a00;--amberbg:#fff7e7;--red:#c12b2b;--redbg:#fff0f0;--purple:#6d4aff;--shadow:0 12px 34px rgba(18,32,51,.08);--radius:18px}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#f7f9fc;color:var(--ink);font:14px/1.55 Inter,"PingFang SC","Microsoft YaHei",system-ui,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}.hidden{display:none!important}
+.topbar{background:#0f1f35;color:#fff}.topbar-inner{max-width:1540px;margin:auto;padding:22px 24px;display:flex;justify-content:space-between;align-items:center;gap:20px}.brand{display:flex;gap:13px;align-items:center}.logo{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#3b82f6,#2457d6);display:grid;place-items:center;font-weight:900;font-size:18px;box-shadow:0 10px 25px rgba(37,99,235,.3)}.eyebrow{font-size:11px;letter-spacing:.14em;color:#91b9ff;font-weight:850}.brand h1{font-size:23px;line-height:1.2;margin:2px 0 0}.topnote{color:#c6d3e6;max-width:590px;font-size:12px}.status{background:rgba(34,197,94,.13);color:#9df0ba;border:1px solid rgba(157,240,186,.18);padding:8px 12px;border-radius:999px;font-size:12px;font-weight:800;white-space:nowrap}
+main{max-width:1540px;margin:auto;padding:20px 24px 72px}.workflow{display:grid;grid-template-columns:1.3fr .7fr;gap:18px;align-items:start}.card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:19px}.card+.card{margin-top:16px}.head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:14px}.head h2{font-size:17px;margin:0}.sub{color:var(--muted);font-size:12px;margin-top:3px}.num{color:var(--blue);font-size:11px;font-weight:900;margin-right:7px}.pill{display:inline-flex;align-items:center;border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 9px;color:var(--muted);font-size:11px;white-space:nowrap}.pill.blue{border-color:#bfd5ff;background:#f5f9ff;color:#2457b8}.pill.green{border-color:#bee8d6;background:var(--greenbg);color:var(--green)}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:13px}table{border-collapse:collapse;width:100%;min-width:790px}th,td{padding:9px 8px;border-bottom:1px solid #e7edf4;white-space:nowrap;text-align:left}th{background:#f8fafc;color:#536277;font-size:11px;font-weight:850;position:sticky;top:0;z-index:1}tr:last-child td{border-bottom:0}.sku-name{width:130px!important}td input{width:76px}input,select,textarea{border:1px solid #cdd8e5;background:#fff;border-radius:9px;color:var(--ink);outline:none;transition:.15s}input,select{height:38px;padding:0 9px}textarea{padding:10px 11px;resize:vertical;min-height:96px}input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.10)}input[type=checkbox]{width:16px;height:16px;accent-color:var(--blue);box-shadow:none}.btn{height:38px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);padding:0 13px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;gap:7px}.btn:hover{background:#f8fbff;border-color:#afc1d6}.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 8px 18px rgba(37,99,235,.18)}.btn.primary:hover{background:var(--blue2)}.btn.ghost{background:#f7f9fc}.btn.danger{color:var(--red)}.btn.small{height:30px;padding:0 9px;font-size:12px}.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-top:11px}
+.batch{margin-top:12px;border:1px dashed #b9c8da;background:#fbfcfe;border-radius:13px;padding:12px}.batch-grid{display:grid;grid-template-columns:1fr auto;gap:9px;align-items:stretch}.batch textarea{width:100%}.batch-help{font-size:11px;color:var(--muted);margin-top:6px}.batch-help code{background:#edf2f7;border-radius:5px;padding:2px 5px}
+.mode-tabs{display:grid;grid-template-columns:1fr 1fr;gap:5px;background:#eef2f7;padding:4px;border-radius:11px}.mode-tabs button{border:0;background:transparent;border-radius:8px;padding:9px;font-weight:850;color:var(--muted)}.mode-tabs button.active{background:#fff;color:var(--blue);box-shadow:0 3px 10px rgba(18,32,51,.09)}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.field label{display:flex;justify-content:space-between;align-items:center;color:#526176;font-size:11px;font-weight:850;margin-bottom:5px}.field label span{color:#91a0b3;font-weight:500}.field input,.field select{width:100%}.settings{border:1px solid var(--line);border-radius:13px;background:#fbfcfe;margin-top:12px}.settings>summary{list-style:none;display:flex;justify-content:space-between;padding:11px 12px;font-weight:850;cursor:pointer}.settings>summary::-webkit-details-marker{display:none}.settings>summary:after{content:"展开";color:var(--blue);font-size:11px}.settings[open]>summary:after{content:"收起"}.settings-body{border-top:1px solid var(--line);padding:12px}.hint{margin-top:10px;border:1px solid #cfe1ff;background:var(--sky);border-radius:11px;padding:10px 11px;color:#31547a;font-size:12px}.hint b{color:var(--ink)}
+.boxlib{display:flex;flex-wrap:wrap;gap:7px;max-height:172px;overflow:auto;padding:2px}.boxchip{border:1px solid #d7e1ec;background:#fff;border-radius:999px;padding:5px 9px;font-size:11px;color:#536277}.boxchip.custom{border-color:#c8bfff;color:#5a43cc;background:#f8f6ff}.box-actions{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:10px}.box-actions input{width:100%}
+.runbar{position:sticky;bottom:12px;z-index:9;margin-top:18px;padding:11px 12px;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:16px;box-shadow:0 14px 40px rgba(18,32,51,.16);display:flex;justify-content:space-between;align-items:center;gap:14px}.runbar .btn{height:48px;min-width:260px}.run-note{color:var(--muted);font-size:12px}.run-note b{color:var(--ink)}
+#results{margin-top:18px}.empty{border:1px dashed #b9c8da;background:#fff;border-radius:16px;padding:30px;text-align:center;color:var(--muted)}.result-head{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;margin-bottom:12px}.result-head h2{font-size:21px;margin:0}.summary-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-bottom:13px}.kpi{background:#fff;border:1px solid var(--line);border-radius:13px;padding:11px}.kpi span{display:block;color:var(--muted);font-size:11px}.kpi b{display:block;font-size:19px;margin-top:2px}.kpi small{color:#8a99aa}.result-table table{min-width:1120px}.result-table tbody tr{cursor:pointer}.result-table tbody tr:hover{background:#f8fbff}.tag{display:inline-flex;border-radius:999px;padding:3px 7px;font-size:10px;font-weight:850}.tag.builtin{background:#edf5ff;color:#245fae}.tag.custom{background:#f2efff;color:#5c43cb}.tag.ok{background:var(--greenbg);color:var(--green)}.tag.warn{background:var(--amberbg);color:var(--amber)}.recbox{font-weight:900;color:#173a69}.muted{color:var(--muted)}.good{color:var(--green);font-weight:850}.warntext{color:var(--amber);font-weight:850}.limit-warning{margin-top:10px;border:1px solid #f6c7c7;background:#fff5f5;color:#9f2d2d;border-radius:10px;padding:9px 10px;font-size:11px;line-height:1.55}
+.plan-card{margin-top:13px;background:#fff;border:1px solid var(--line);border-radius:17px;overflow:hidden}.plan-card.active{border-color:#9fc4ff;box-shadow:0 14px 32px rgba(37,99,235,.10)}.plan-head{padding:15px 16px;display:flex;justify-content:space-between;gap:15px;align-items:flex-start}.plan-title{font-size:18px;font-weight:900}.plan-meta{color:var(--muted);font-size:12px;margin-top:3px}.plan-main{display:grid;grid-template-columns:1fr 1.05fr;border-top:1px solid var(--line)}.metrics{padding:15px 16px}.metric{display:flex;justify-content:space-between;gap:14px;padding:7px 0;border-bottom:1px dashed #e3e9f0;font-size:12px;color:#5b697b}.metric:last-child{border-bottom:0}.metric b{color:var(--ink);text-align:right}.recommend-line{border:1px solid #bcd7ff;background:#f5f9ff;border-radius:12px;padding:11px 12px;margin-bottom:11px}.recommend-line .big{font-size:20px;font-weight:950;color:#174fba}.recommend-line small{color:#64748b}.alternatives{display:grid;gap:7px;margin-top:10px}.alt{border:1px solid var(--line);border-radius:10px;padding:9px 10px;font-size:11px;color:var(--muted)}.alt b{color:var(--ink)}
+.viewer{min-height:405px;border-left:1px solid var(--line);background:linear-gradient(180deg,#fbfdff,#f1f6fb);position:relative;padding:13px}.viewer-top{display:flex;justify-content:space-between;gap:8px;align-items:center}.viewer-top select{height:32px;font-size:11px}.viewer canvas{display:block;width:100%;height:330px;touch-action:none;cursor:grab}.viewer canvas:active{cursor:grabbing}.viewer-note{font-size:11px;color:#75859a;text-align:center;margin-top:-4px}.legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:5px}.legend span{display:inline-flex;align-items:center;gap:5px;font-size:10px;color:#66758a}.legend i{width:9px;height:9px;border-radius:3px;display:inline-block}.copyline{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:10px}.copybox{flex:1;min-width:200px;border:1px solid #dce6f2;background:#fbfcfe;border-radius:9px;padding:8px 10px;font-size:11px;color:#526176}.manual-panel{margin-top:12px;border:1px solid #d9e4f1;background:#fbfcff;border-radius:12px;padding:11px}.manual-grid{display:grid;grid-template-columns:1.4fr .8fr .8fr .8fr auto;gap:8px;align-items:end}.manual-grid .mini-field label{display:block;color:#607187;font-size:11px;font-weight:800;margin-bottom:4px}.manual-grid .mini-field input,.manual-grid .mini-field select{width:100%}.manual-result{margin-top:8px;border:1px dashed #cfe0f4;border-radius:10px;padding:8px 10px;color:#526176;font-size:11px;background:#fff}.shape-badge{display:inline-flex;align-items:center;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:850}.shape-good{background:#eaf8f2;color:#087a55}.shape-mid{background:#eef5ff;color:#245fae}.shape-bad{background:#fff7e7;color:#9a5a00}.manual-builder{margin-top:15px;border:1px dashed #bdd3f1;background:#fbfdff;border-radius:15px;padding:14px}.manual-builder h3{margin:0;font-size:15px}.manual-builder .sub{margin-top:4px}.manual-grid{display:grid;grid-template-columns:1.15fr .7fr .7fr .7fr .9fr 1.2fr;gap:9px;margin-top:12px;align-items:end}.manual-note{margin-top:9px;font-size:11px;color:#64748b}.manual-box-wrap.hidden{display:none}.tag.manual{background:#fff4d8;color:#946200}.plan-tip{margin-top:9px;padding:8px 10px;border-radius:10px;background:#fafcff;border:1px solid #e1eaf4;font-size:11px;color:#637489}
+.modal{position:fixed;inset:0;z-index:50;background:rgba(15,31,53,.47);display:none;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}.modal.show{display:flex}.modal-card{width:min(900px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:17px;box-shadow:0 24px 80px rgba(18,32,51,.3)}.modal-head{position:sticky;top:0;background:#fff;display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);z-index:2}.modal-body{padding:15px}.modal-body textarea{width:100%;min-height:280px}.toast{position:fixed;right:20px;bottom:20px;z-index:80;background:#10213b;color:#fff;border-radius:10px;padding:10px 14px;opacity:0;transform:translateY(9px);transition:.18s;pointer-events:none}.toast.show{opacity:1;transform:none}
+.page-tabs{display:flex;gap:8px;margin-bottom:16px}.page-tabs button{height:42px;border:1px solid var(--line);background:#fff;border-radius:12px;padding:0 16px;font-weight:900;color:#5d6d80}.page-tabs button.active{background:#eaf2ff;border-color:#bcd1ff;color:#1f57bf;box-shadow:0 8px 20px rgba(37,99,235,.08)}#page-auto.hidden,#page-manual.hidden{display:none}.manual-layout{display:grid;grid-template-columns:1.05fr .95fr;gap:18px;align-items:start}.manual-kpis{grid-template-columns:repeat(2,1fr);margin-top:12px}.manual-viewer canvas{height:420px}.manual-summary{display:grid;gap:10px}.manual-summary .line{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px dashed #e2e8f0;font-size:12px;color:#526176}.manual-summary .line:last-child{border-bottom:0}.manual-summary b{color:var(--ink);text-align:right}.manual-note{margin-top:9px;font-size:11px;color:#64748b}.manual-badge{display:inline-flex;border-radius:999px;padding:3px 8px;font-size:10px;font-weight:850;background:#eef5ff;color:#245fae}.manual-source-box{border:1px dashed #c7d7ea;background:#fbfdff;border-radius:12px;padding:10px 11px;margin-top:10px;color:#5a6a7c;font-size:12px}.model-library{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}.sku-model{border:1px solid #d6e2f0;background:linear-gradient(180deg,#fff,#f7fbff);border-radius:12px;padding:10px;min-height:90px;display:flex;flex-direction:column;justify-content:space-between;cursor:grab;user-select:none}.sku-model:active{cursor:grabbing}.sku-model b{font-size:12px}.sku-model small{color:#64748b}.packing-board-wrap{border:1px solid #d9e4f1;border-radius:14px;background:#f8fbff;padding:12px}.packing-board{position:relative;width:100%;min-height:420px;border:1px dashed #bfd1e6;border-radius:12px;background-image:linear-gradient(to right, rgba(191,209,230,.45) 1px, transparent 1px),linear-gradient(to bottom, rgba(191,209,230,.45) 1px, transparent 1px);background-size:24px 24px;background-color:#fff;overflow:auto}.board-empty{position:absolute;inset:0;display:grid;place-items:center;color:#8a99aa;font-size:14px;pointer-events:none}.board-item{position:absolute;border:1px solid #3b82f6;background:rgba(96,165,250,.72);border-radius:8px;color:#0f2f5d;font-size:11px;font-weight:800;padding:4px;overflow:hidden;touch-action:none;cursor:move;box-shadow:0 6px 14px rgba(37,99,235,.14)}.board-item.selected{outline:3px solid rgba(37,99,235,.25);z-index:3}.board-item span{display:block;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}.board-item .sub{font-size:10px;color:#103f82;margin-top:2px}.board-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;color:#5f7186;font-size:12px}.model-library{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}.sku-model{border:1px solid #d6e2f0;background:linear-gradient(180deg,#fff,#f7fbff);border-radius:12px;padding:10px;min-height:92px;display:flex;flex-direction:column;justify-content:space-between;cursor:grab;user-select:none}.sku-model:active{cursor:grabbing}.sku-model b{display:block;font-size:12px}.sku-model small{color:#64748b}.manual-dropzone{border:1px dashed #b9d2f4}.dropzone-note{border:1px dashed #cfe1ff;background:#f5f9ff;border-radius:11px;padding:10px 11px;color:#4a678c;font-size:12px}.hint.hidden{display:none!important}.manual-viewer{resize:vertical;overflow:auto}.sku-model .meta{font-size:10px;color:#6b7a8b;margin-top:4px}.manual-layout{transition:grid-template-columns .2s ease}.scheme-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-top:12px}.scheme-card{border:1px solid #d7e3f0;border-radius:13px;background:#fbfdff;padding:11px}.scheme-card.best{border-color:#9fc4ff;box-shadow:0 8px 20px rgba(37,99,235,.08)}.scheme-card h4{margin:0 0 6px;font-size:13px}.scheme-card .rows{display:grid;gap:4px;font-size:11px;color:#607187}.scheme-card .rows b{color:#18324f}.scheme-card .toolbar{margin-top:9px}.scheme-score{display:inline-flex;border-radius:999px;padding:3px 7px;font-size:10px;font-weight:850;background:#eaf8f2;color:#087a55}.plan-explain{margin:10px 0 12px;border:1px solid #d9e8fb;background:#f7fbff;border-radius:12px;padding:10px 12px;font-size:12px;color:#4d637c;line-height:1.7}.plan-explain b{color:#173a69}.exec-good{color:#087a55;font-weight:900}.exec-mid{color:#245fae;font-weight:900}.exec-hard{color:#9a5a00;font-weight:900}.tail-note{border:1px solid #d8eadf;background:#f5fbf7;border-radius:10px;padding:8px 10px;margin-top:8px;font-size:11px;color:#426452}@media(max-width:1080px){.workflow{grid-template-columns:1fr}.runbar{position:static}.summary-kpis{grid-template-columns:repeat(3,1fr)}.plan-main{grid-template-columns:1fr}.viewer{border-left:0;border-top:1px solid var(--line)}}
+@media(max-width:700px){.page-tabs{flex-wrap:wrap}.page-tabs button{flex:1 1 100%}.manual-layout{grid-template-columns:1fr}.manual-kpis{grid-template-columns:1fr 1fr}main,.topbar-inner{padding-left:12px;padding-right:12px}.topnote,.status{display:none}.head{flex-wrap:wrap}.form-grid,.manual-grid{grid-template-columns:1fr}.batch-grid,.box-actions{grid-template-columns:1fr}.runbar{flex-direction:column;align-items:stretch}.runbar .btn{width:100%;min-width:0}.summary-kpis{grid-template-columns:1fr 1fr}.result-head{align-items:flex-start;flex-direction:column}.card{padding:14px}.viewer canvas{height:300px}}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="top">
-    <div>
-      <h1>FBA 发货决策助手 V4.1</h1>
-      <p class="sub">先区分“报价档位”和“真实最低收费规则”，再计算计费量、附加费和时效，最后比较成本。对安速报价表启用精准结构解析，其他货代表默认按候选模式处理。</p>
+<header class="topbar"><div class="topbar-inner">
+  <div class="brand"><div class="logo">箱</div><div><div class="eyebrow">PACKING OPTIMIZER</div><h1>批量智能装箱规划器</h1></div></div>
+  <div class="topnote">输入产品包装规格与数量，自动匹配内置箱规；若现有箱规不理想，自动反推建议采购纸箱尺寸，并生成可旋转的 3D 装箱示意。</div>
+  <div class="status">45 个内置箱规已加载</div>
+</div></header>
+<main>
+<div id="page-auto">
+<div class="workflow">
+<section>
+  <div class="card">
+    <div class="head"><div><h2><span class="num">01</span>批量产品包装规格</h2><div class="sub">这里填的是单件“包装后”的长宽高、毛重和本次发货数量</div></div><span class="pill blue" id="skuCount">0 个 SKU</span></div>
+    <div class="table-wrap"><table><thead><tr><th>SKU / 名称</th><th>长 cm</th><th>宽 cm</th><th>高 cm</th><th>单件 kg</th><th>数量</th><th>可旋转</th><th></th></tr></thead><tbody id="skuBody"></tbody></table></div>
+    <div class="toolbar"><button class="btn" id="addSku">＋ 添加 SKU</button><button class="btn" id="demo">载入示例</button><button class="btn ghost" id="toggleBatch">批量粘贴</button><button class="btn danger" id="clearSku">清空</button></div>
+    <div class="batch hidden" id="batchPanel"><div class="batch-grid"><textarea id="batchSku" placeholder="SKU-A\t20\t15\t10\t0.45\t120\nSKU-B\t32\t18\t8\t0.72\t60"></textarea><button class="btn primary" id="importSku">导入产品</button></div><div class="batch-help">每行：<code>SKU / 长 / 宽 / 高 / 单件重量 / 数量</code>，支持 Excel 直接复制、Tab、逗号或空格分隔。</div></div>
+  </div>
+
+  <div class="card">
+    <div class="head"><div><h2><span class="num">02</span>纸箱库</h2><div class="sub">已把你上传的“内置箱规.xlsx”全部内置；也可继续加入你常买的箱规</div></div><span class="pill green"><span id="boxCount">45</span> 个箱规</span></div>
+    <div class="boxlib" id="boxLib"></div>
+    <div class="box-actions"><input id="boxQuick" placeholder="新增箱规：68*42*38, 70*50*40"><button class="btn" id="addBoxes">＋ 加入箱库</button></div>
+    <div class="toolbar"><button class="btn small" id="resetBoxes">恢复内置 45 个</button><button class="btn small" id="exportBoxLib">导出箱规 CSV</button></div>
+  </div>
+</section>
+
+<section>
+  <div class="card">
+    <div class="head"><div><h2><span class="num">03</span>优化目标</h2><div class="sub">日常建议用“平衡推荐”：优先减少总体积，同时避免产生过多小箱</div></div></div>
+    <div class="mode-tabs"><button class="active" data-goal="balanced">平衡推荐</button><button data-goal="volume">最低总体积</button></div>
+    <div class="form-grid" style="margin-top:12px">
+      <div class="field"><label>每个 SKU 展示方案数 <span>含旋转 / 排列差异</span></label><select id="variantCount"><option value="5">5 个</option><option value="8" selected>8 个</option><option value="10">10 个</option></select></div>
+      <div class="field"><label>箱型偏好 <span>先保利用率，再看方正</span></label><select id="shapePref"><option value="0">空间利用率优先</option><option value="1">高利用率 + 尽量方正</option><option value="2" selected>方正优先（推荐）</option><option value="3">强制方正（可牺牲更多体积）</option></select></div>
+      <div class="field"><label>装箱策略 <span>优先单箱还是直接按限制优化</span></label><select id="packMode"><option value="single" selected>单箱优先（遵守重量 / 尺寸上限）</option><option value="limit">按限制直接优化分箱</option></select></div>
     </div>
-    <div class="badge">资格 → 计费 → 附加费 → 时效 → 推荐</div>
+    <div class="hint"><b>默认逻辑：</b>先尝试把每个 SKU 的全部数量装进 <b>1 个箱子</b>，但必须同时满足你设置的 <b>单箱毛重上限</b> 和 <b>最大长宽高</b>。如果一箱确实超过任一上限，系统才自动进入合理分箱；不会为了坚持单箱而生成超重或超尺寸方案。</div>
+    <details class="settings" open><summary>核心限制</summary><div class="settings-body"><div class="form-grid">
+      <div class="field"><label>单箱毛重上限 <span>kg</span></label><input id="maxGross" type="number" min="1" step="0.1" value="22.5"></div>
+      <div class="field"><label>预留纸箱自重 <span>kg</span></label><input id="tare" type="number" min="0" step="0.1" value="1"></div>
+      <div class="field"><label>内置箱规内径扣减 <span>cm / 条边总量</span></label><input id="innerDeduct" type="number" min="0" step="0.1" value="1"></div>
+      <div class="field"><label>新品采购尺寸进位 <span>cm</span></label><select id="roundSize"><option value="1">1 cm</option><option value="0.5">0.5 cm</option><option value="2">2 cm</option></select></div>
+      <div class="field"><label>新品箱尺寸预留 <span>cm / 条边总量</span></label><input id="cushion" type="number" min="0" step="0.1" value="1"></div>
+      <div class="field"><label>优先使用现有箱阈值 <span>体积差</span></label><select id="builtinTolerance"><option value="0.08">≤ 8%</option><option value="0.12">≤ 12%</option><option value="0.05">≤ 5%</option><option value="0">不偏向现有箱</option></select></div>
+    </div></div></details>
+    <details class="settings"><summary>外箱尺寸限制（可按你的渠道改）</summary><div class="settings-body"><div class="form-grid">
+      <div class="field"><label>最长边上限 <span>cm</span></label><input id="maxLong" type="number" min="1" step="0.1" value="91.4"></div>
+      <div class="field"><label>次长边上限 <span>cm</span></label><input id="maxSecond" type="number" min="1" step="0.1" value="63.5"></div>
+      <div class="field"><label>第三边上限 <span>cm</span></label><input id="maxThird" type="number" min="1" step="0.1" value="63.5"></div>
+      <div class="field"><label>体积重除数 <span>仅参考</span></label><select id="divisor"><option>6000</option><option>5000</option><option>7000</option></select></div>
+    </div></div></details>
   </div>
 
-  <div class="steps">
-    <div class="step active"><b>1</b>上传报价表并确认识别模式</div>
-    <div class="step"><b>2</b>填写货件数据与运营偏好</div>
-    <div class="step"><b>3</b>查看推荐、排除原因和时效代价</div>
+  <div class="card">
+    <div class="head"><div><h2><span class="num">04</span>输出内容</h2><div class="sub">结果重点不是只告诉你“用哪个箱”，而是直接给采购尺寸与装法</div></div></div>
+    <div class="metric"><span>推荐采购纸箱</span><b>现有内置箱 / 自动反推新箱</b></div>
+    <div class="metric"><span>装箱结构</span><b>朝向 + 每排 × 每列 × 层数</b></div>
+    <div class="metric"><span>批量结果</span><b>每箱数量 / 箱数 / 尾箱 / 毛重</b></div>
+    <div class="metric"><span>空间效率</span><b>满箱利用率 + 整票总体积</b></div>
+    <div class="metric"><span>3D 展示</span><b>可拖动旋转 · 满箱 / 尾箱切换</b></div>
   </div>
-
-  <div class="card section">
-    <div class="section-head"><h2>① 上传货代报价表</h2><span id="templateTag" class="tag gray">未上传</span></div>
-    <div class="upload">
-      <input id="file" type="file" accept=".xlsx,.xls,.xlsm">
-      <div id="fileStatus" class="status">上传后会检查美国海运卡派、海运快递派、空派、国际快递、小货价，以及“发货须知”里的最低收费和尺寸规则。</div>
-    </div>
-    <div class="help" style="margin-top:9px">仓库选择采用“双库”：货代表中出现过的FC代码优先 + 已核验Amazon地址库补充邮编。上传报价表后会自动从全部美国线路Sheet重新提取仓库，因此货代新增仓库也会自动进入下拉。能核验邮编的自动填；暂时没有邮编的仓也可用于卡派报价，但快递派前必须补邮编。最终发货地址仍以本次 Send to Amazon / 箱唛为准。</div>
-  </div>
-
-  <div class="card section">
-    <div class="section-head">
-      <h2>② 当前货件方案</h2>
-      <div class="btns"><button onclick="addShipment()">+ 增加分仓货件</button><button onclick="resetShipments()">恢复单仓</button></div>
-    </div>
-    <div id="shipments"></div>
-    <div class="help">同一行代表一个 Amazon 目的仓货件。分仓时可以增加多行；系统会分别找每个仓的可用运输渠道，再汇总当前分仓方案的头程成本。</div>
-
-    <div class="grid" style="margin-top:14px">
-      <div class="field"><label>国内起运地</label><input id="origin" list="origins" value="重庆"><datalist id="origins"></datalist></div>
-      <div class="field"><label>货物属性</label><select id="cargo"><option>普货</option><option>带电</option><option>纯电</option><option>敏感货</option></select></div>
-      <div class="field"><label>税务偏好</label><select id="tax"><option value="">都可以</option><option value="包税" selected>包税优先</option><option value="不包税">不包税优先</option></select></div>
-      <div class="field"><label>运营目标</label><select id="goal"><option value="balanced" selected>成本时效平衡</option><option value="cost">最低成本</option><option value="speed">最快优先</option></select></div>
-      <div class="field"><label>总件数（商品件数）</label><input id="units" type="number" value="240" min="1"></div>
-      <div class="field"><label>每快 1 天愿意多付（RMB）</label><input id="dayValue" type="number" value="100" min="0"></div>
-    </div>
-
-    <details class="advanced">
-      <summary>高级费用设置</summary>
-      <div class="grid" style="margin-top:12px">
-        <div class="field"><label>Amazon 入库配置费（USD，当前方案总额）</label><input id="placement" type="number" value="0" step="0.01"></div>
-        <div class="field"><label>美元兑人民币</label><input id="fx" type="number" value="7.2" step="0.01"></div>
-        <div class="field"><label>已知额外费用（RMB，总额）</label><input id="manualExtra" type="number" value="0" step="1"></div>
-        <div class="field"><label>只看运输方式</label><select id="modeFilter"><option value="">全部</option><option>海运卡派</option><option>海运快递派</option><option>空运快递派</option><option>空运卡派</option><option>国际快递</option><option>快递小货</option></select></div>
-        <div class="field span2"><label>产品/包装备注关键词（只用于风险提示）</label><input id="productNote" placeholder="如 木制品、带磁、易碎、编织袋、超长"></div>
-      </div>
-      <div class="help" style="margin-top:8px">配置费只属于“当前 Amazon 货件方案”。如果比较“单仓 vs 5仓 vs 2仓”，应分别使用各自在 Send to Amazon 中生成的配置费，不建议猜测。</div>
-    </details>
-
-    <div class="btns" style="margin-top:15px">
-      <button class="primary" onclick="analyze()">一键计算并给建议</button>
-      <button onclick="saveInputs()">保存常用参数</button>
-      <button onclick="loadInputs()">读取已保存参数</button>
-    </div>
-  </div>
-
-  <div class="kpis">
-    <div class="card kpi"><div class="l">总实重</div><div id="kWeight" class="v">-</div><div class="s">所有分仓合计</div></div>
-    <div class="card kpi"><div class="l">总体积</div><div id="kCbm" class="v">-</div><div class="s">所有分仓合计</div></div>
-    <div class="card kpi"><div class="l">当前推荐头程</div><div id="kFreight" class="v">-</div><div class="s">不含配置费时的运输成本</div></div>
-    <div class="card kpi"><div class="l">当前方案综合成本</div><div id="kTotal" class="v">-</div><div class="s">头程 + 配置费 + 手填附加</div></div>
-    <div class="card kpi"><div class="l">单件综合物流成本</div><div id="kUnit" class="v">-</div><div class="s">按商品总件数摊销</div></div>
-  </div>
-
-  <div class="card section">
-    <div class="section-head"><h2>③ 识别覆盖诊断</h2><span class="help">确认没有静默漏项</span></div>
-    <div id="coverageDiag" class="callout">上传报价表后显示识别覆盖情况。</div>
-  </div>
-
-  <div class="card section">
-    <div class="section-head"><h2>④ 起算点与资格诊断</h2><span class="help">先看这里，再看最低价</span></div>
-    <div id="diagnostics" class="diagnostics">
-      <div class="diag">上传报价表并计算后显示。</div>
-    </div>
-  </div>
-
-  <div class="card section">
-    <div class="section-head">
-      <h2>⑤ 推荐方案</h2>
-      <span id="resultCount" class="tag gray">0 个可用报价</span>
-    </div>
-    <div id="recommendations" class="advice-grid">
-      <div class="advice-card">计算后会同时给出“最省钱、最快、平衡方案”。</div>
-    </div>
-    <div id="mainAdvice" class="callout" style="margin-top:12px">系统不会把“不满足起算量”或“需要单询”的渠道当作最低价推荐。</div>
-  </div>
-
-  <div class="card section">
-    <div class="section-head"><h2>⑥ 可用渠道明细</h2><span class="help">绿色行为当前运营目标的推荐候选</span></div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr>
-          <th>目的仓</th><th>运输方式</th><th>渠道</th><th>起算 / 计费规则</th><th>计费量</th>
-          <th>基础运费</th><th>规则附加费</th><th>当前货件成本</th><th>时效</th><th>时效口径</th><th>建议 / 风险</th><th>来源</th>
-        </tr></thead>
-        <tbody id="resultBody"><tr><td colspan="12" style="text-align:center;color:#667085">等待计算</td></tr></tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="card section">
-    <div class="section-head"><h2>⑦ 被排除 / 需单询方案</h2><span id="excludedCount" class="tag gray">0</span></div>
-    <div class="table-wrap excluded">
-      <table>
-        <thead><tr><th>目的仓</th><th>运输方式</th><th>渠道</th><th>为什么不能直接用</th><th>起算规则</th><th>来源</th></tr></thead>
-        <tbody id="excludedBody"><tr><td colspan="6" style="text-align:center;color:#667085">暂无</td></tr></tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="footer">
-    仓库库说明：内置仓库用于自动匹配邮编和报价区域，不取代 Amazon 当前货件标签。公开地址交叉核验到 2026 年；存在 UPS 替代地址的仓会单独提醒。<br><br>
-    重要：表头里的“50KG+ / 100KG+ / 0.5CBM+”默认只解释为公开报价档位，不自动解释成最低起运量，也不会自动把不足重量/体积补到该档位。只有备注明确写“最低/起收/不足按X计费”时，才执行最低收费规则。美国快递派按发货须知执行：单箱不足12KG按12KG、单票不足12KG按12KG；美国卡派通用备注按单票计费重量不低于10KG处理。时效比较只在相同口径下直接计算差值，例如“开船后签收”与“开船后签收”可以比较；“5日提取”与“20日签收”不会伪装成可直接相减。
-  </div>
+</section>
 </div>
 
+<div class="runbar"><div class="run-note"><b>一次计算全部 SKU：</b>默认每个 SKU 的全部数量优先装进 1 箱；重量和渠道尺寸超限只提示，不自动拆箱。</div><button class="btn primary" id="calculate">▣ 生成最优装箱方案</button></div>
+<div id="manualBackInfo" class="hint hidden" style="margin-top:14px"></div>
+<section id="results"><div class="empty">填入产品规格后，点击“生成最优装箱方案”。</div></section>
+</div>
+</main>
+<div class="toast" id="toast"></div>
 <script>
-let WB=null, SHEETS={}, TEMPLATE="unknown";
-let shipmentSeq=1;
 
-const $=id=>document.getElementById(id);
-const num=v=>Number(v||0);
-const txt=v=>String(v??"").trim();
-const money=v=>"¥"+Number(v||0).toLocaleString("zh-CN",{minimumFractionDigits:2,maximumFractionDigits:2});
-const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
-const REFERENCE_FREIGHT_FC = [{"code":"ABE3","count":6,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"ABE4","count":8,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列","美国海外仓系列","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"ABE8","count":7,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"ABQ2","count":4,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西直送系列"],"zip":""},{"code":"ACY2","count":8,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列","美国海外仓系列","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"AFW5","count":1,"sheets":["美中-休斯顿"],"zip":""},{"code":"AKC1","count":1,"sheets":["美中-芝加哥"],"zip":""},{"code":"AKR1","count":4,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列","美中-芝加哥"],"zip":""},{"code":"ALB1","count":3,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列"],"zip":""},{"code":"ATL1","count":2,"sheets":["美东南海陆系列","美东南直航系列"],"zip":""},{"code":"ATL3","count":2,"sheets":["美东南海陆系列","美东南直航系列"],"zip":""},{"code":"AVP1","count":7,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"AVP9","count":5,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列","美国海外仓系列"],"zip":""},{"code":"BFI3","count":5,"sheets":["美国海外仓系列","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西北"],"zip":""},{"code":"BFI7","count":1,"sheets":["美西北"],"zip":""},{"code":"BFL2","count":1,"sheets":["美西北"],"zip":""},{"code":"BHX3","count":1,"sheets":["美国海运查询表 (2)"],"zip":""},{"code":"BHX4","count":1,"sheets":["美国海运查询表 (2)"],"zip":""},{"code":"BHX5","count":1,"sheets":["美国海运查询表 (2)"],"zip":""},{"code":"BHX7","count":1,"sheets":["美国海运查询表 (2)"],"zip":""},{"code":"BHX8","count":1,"sheets":["美国海运查询表 (2)"],"zip":""},{"code":"BJC1","count":3,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"BNA2","count":3,"sheets":["美东南海陆系列","美东南直航系列","美国海外仓系列"],"zip":""},{"code":"BNA6","count":2,"sheets":["美东南海陆系列","美东南直航系列"],"zip":""},{"code":"BOS7","count":3,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列"],"zip":""},{"code":"BRS2","count":1,"sheets":["美国海运查询表 (2)"],"zip":""},{"code":"BWI4","count":3,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列"],"zip":""},{"code":"CHA2","count":2,"sheets":["美东南海陆系列","美东南直航系列"],"zip":""},{"code":"CHO1","count":3,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列"],"zip":""},{"code":"CLE2","count":1,"sheets":["美中-芝加哥"],"zip":""},{"code":"CLT2","count":9,"sheets":["美东-海铁系列","美东-海陆系列","美东南海陆系列","美东南直航系列","美东直航系列","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"CLT3","count":5,"sheets":["美东-海铁系列","美东-海陆系列","美东南海陆系列","美东南直航系列","美东直航系列"],"zip":""},{"code":"CMH2","count":4,"sheets":["美中-芝加哥","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"CMH3","count":4,"sheets":["美中-芝加哥","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"CMH4","count":1,"sheets":["美中-芝加哥"],"zip":""},{"code":"CWL1","count":1,"sheets":["美国海运查询表 (2)"],"zip":""},{"code":"DAL3","count":1,"sheets":["美中-休斯顿"],"zip":""},{"code":"DCA6","count":3,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列"],"zip":""},{"code":"DEN8","count":3,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"DET1","count":1,"sheets":["美中-芝加哥"],"zip":""},{"code":"DET2","count":1,"sheets":["美中-芝加哥"],"zip":""},{"code":"DFW6","count":4,"sheets":["美中-休斯顿","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"DFW7","count":1,"sheets":["美中-休斯顿"],"zip":""},{"code":"DSA7","count":1,"sheets":["美国海运查询表 (2)"],"zip":""},{"code":"EMA1","count":1,"sheets":["美国海运查询表 (2)"],"zip":""},{"code":"EMA2","count":1,"sheets":["美国海运查询表 (2)"],"zip":""},{"code":"EMA3","count":1,"sheets":["美国海运查询表 (2)"],"zip":""},{"code":"EUK5","count":1,"sheets":["美国海运查询表 (2)"],"zip":""},{"code":"FAT2","count":5,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西北","美西直送系列"],"zip":""},{"code":"FOE1","count":5,"sheets":["美中-休斯顿","美中-芝加哥","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"FTW1","count":5,"sheets":["美中-休斯顿","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"FTW2","count":5,"sheets":["美中-休斯顿","美国海外仓系列","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"FTW3","count":1,"sheets":["美中-休斯顿"],"zip":""},{"code":"FTW5","count":5,"sheets":["美中-休斯顿","美国海外仓系列","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"FTW9","count":1,"sheets":["美中-休斯顿"],"zip":""},{"code":"FWA4","count":8,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列","美中-芝加哥","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"GEG2","count":5,"sheets":["美国海外仓系列","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西北"],"zip":""},{"code":"GEU2","count":4,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西直送系列"],"zip":""},{"code":"GEU3","count":5,"sheets":["美国海外仓系列","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西直送系列"],"zip":""},{"code":"GRR1","count":1,"sheets":["美中-芝加哥"],"zip":""},{"code":"GSO1","count":6,"sheets":["美东-海铁系列","美东-海陆系列","美东南海陆系列","美东南直航系列","美东直航系列","美国海外仓系列"],"zip":""},{"code":"GYR2","count":4,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西直送系列"],"zip":""},{"code":"GYR3","count":4,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西直送系列"],"zip":""},{"code":"HEA2","count":3,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列"],"zip":""},{"code":"HGR6","count":3,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列"],"zip":""},{"code":"HIA1","count":3,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列"],"zip":""},{"code":"HLI2","count":5,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西北","美西直送系列"],"zip":""},{"code":"HOU1","count":1,"sheets":["美中-休斯顿"],"zip":""},{"code":"HOU2","count":1,"sheets":["美中-休斯顿"],"zip":""},{"code":"HOU3","count":1,"sheets":["美中-休斯顿"],"zip":""},{"code":"HOU7","count":2,"sheets":["美中-休斯顿","美国海外仓系列"],"zip":""},{"code":"HOU8","count":5,"sheets":["美中-休斯顿","美国海外仓系列","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"HSV1","count":5,"sheets":["美东-海铁系列","美东-海陆系列","美东南海陆系列","美东南直航系列","美东直航系列"],"zip":""},{"code":"IAH3","count":5,"sheets":["美中-休斯顿","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"IAZ1","count":3,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"ICT2","count":5,"sheets":["美中-休斯顿","美国海外仓系列","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"IGA3","count":5,"sheets":["美东-海铁系列","美东-海陆系列","美东南海陆系列","美东南直航系列","美东直航系列"],"zip":""},{"code":"IGQ2","count":4,"sheets":["美中-芝加哥","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"ILG1","count":3,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列"],"zip":""},{"code":"IMI1","count":4,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列","美中-芝加哥"],"zip":""},{"code":"IMO1","count":4,"sheets":["美中-芝加哥","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"IMS1","count":7,"sheets":["美东-海铁系列","美东-海陆系列","美东南海陆系列","美东南直航系列","美东直航系列","美中-休斯顿","美中-芝加哥"],"zip":""},{"code":"INC1","count":8,"sheets":["美东-海铁系列","美东-海陆系列","美东南海陆系列","美东南直航系列","美东直航系列","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"IND1","count":3,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"IND2","count":4,"sheets":["美国海外仓系列","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"IND3","count":1,"sheets":["美中-芝加哥"],"zip":""},{"code":"IND5","count":1,"sheets":["美中-芝加哥"],"zip":""},{"code":"IND9","count":8,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列","美中-芝加哥","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"IPA1","count":3,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列"],"zip":""},{"code":"ITX3","count":1,"sheets":["美中-休斯顿"],"zip":""},{"code":"IWA6","count":4,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西北"],"zip":""},{"code":"JAX3","count":4,"sheets":["美东南海陆系列","美东南直航系列","美国海外仓系列"],"zip":""},{"code":"JVL1","count":4,"sheets":["美中-芝加哥","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"LAS1","count":4,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西直送系列"],"zip":""},{"code":"LAS6","count":3,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"LAX1","count":1,"sheets":["美西直送系列"],"zip":""},{"code":"LAX2","count":4,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西直送系列"],"zip":""},{"code":"LAX9","count":6,"sheets":["美国海运查询表 (2)","美国空卡（8）","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西直送系列"],"zip":"46275"},{"code":"LBA2","count":1,"sheets":["美国海运查询表 (2)"],"zip":"46275"},{"code":"LBA4","count":1,"sheets":["美国海运查询表 (2)"],"zip":""},{"code":"LBA8","count":1,"sheets":["美国海运查询表 (2)"],"zip":""},{"code":"LBE1","count":3,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列"],"zip":""},{"code":"LCY1","count":1,"sheets":["美国海运查询表 (2)"],"zip":""},{"code":"LCY2","count":1,"sheets":["美国海运查询表 (2)"],"zip":""},{"code":"LCY3","count":1,"sheets":["美国海运查询表 (2)"],"zip":""},{"code":"LEX1","count":1,"sheets":["美中-芝加哥"],"zip":""},{"code":"LFT1","count":5,"sheets":["美中-休斯顿","美国海外仓系列","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"LGB4","count":3,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"LGB6","count":3,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"LGB8","count":5,"sheets":["美国空卡（8）","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西直送系列"],"zip":""},{"code":"LIT2","count":5,"sheets":["美中-休斯顿","美国海外仓系列","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"LPL2","count":1,"sheets":["美国海运查询表 (2)"],"zip":""},{"code":"LTN2","count":1,"sheets":["美国海运查询表 (2)"],"zip":""},{"code":"LTN4","count":1,"sheets":["美国海运查询表 (2)"],"zip":""},{"code":"LTN7","count":1,"sheets":["美国海运查询表 (2)"],"zip":""},{"code":"MAN1","count":1,"sheets":["美国海运查询表 (2)"],"zip":""},{"code":"MAN2","count":1,"sheets":["美国海运查询表 (2)"],"zip":""},{"code":"MAN3","count":1,"sheets":["美国海运查询表 (2)"],"zip":""},{"code":"MAN4","count":1,"sheets":["美国海运查询表 (2)"],"zip":""},{"code":"MCC1","count":4,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西北"],"zip":""},{"code":"MCE1","count":6,"sheets":["美国海外仓系列","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西北","美西直送系列"],"zip":""},{"code":"MCI1","count":1,"sheets":["美中-芝加哥"],"zip":""},{"code":"MCI4","count":1,"sheets":["美中-芝加哥"],"zip":""},{"code":"MCO1","count":2,"sheets":["美东南海陆系列","美东南直航系列"],"zip":""},{"code":"MCO2","count":9,"sheets":["美东-海铁系列","美东-海陆系列","美东南海陆系列","美东南直航系列","美东直航系列","美国海外仓系列","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"MDT1","count":3,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列"],"zip":""},{"code":"MDT4","count":3,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列"],"zip":""},{"code":"MDW2","count":8,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列","美中-芝加哥","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"MDW4","count":1,"sheets":["美中-芝加哥"],"zip":""},{"code":"MDW6","count":7,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列","美中-芝加哥","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"MDW8","count":1,"sheets":["美中-芝加哥"],"zip":""},{"code":"MEM1","count":10,"sheets":["美东-海铁系列","美东-海陆系列","美东南海陆系列","美东南直航系列","美东直航系列","美中-休斯顿","美中-芝加哥","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"MEM6","count":6,"sheets":["美中-休斯顿","美中-芝加哥","美国海外仓系列","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"MEM8","count":1,"sheets":["美中-休斯顿"],"zip":""},{"code":"MGE3","count":2,"sheets":["美东南海陆系列","美东南直航系列"],"zip":""},{"code":"MIT2","count":5,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西北","美西直送系列"],"zip":""},{"code":"MKC4","count":4,"sheets":["美中-芝加哥","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"MKE1","count":1,"sheets":["美中-芝加哥"],"zip":""},{"code":"MKE2","count":1,"sheets":["美中-芝加哥"],"zip":""},{"code":"MME1","count":1,"sheets":["美国海运查询表 (2)"],"zip":""},{"code":"MME2","count":1,"sheets":["美国海运查询表 (2)"],"zip":""},{"code":"MQJ1","count":7,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列","美中-芝加哥","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"MQJ2","count":1,"sheets":["美中-芝加哥"],"zip":""},{"code":"MQY2","count":2,"sheets":["美东南海陆系列","美东南直航系列"],"zip":""},{"code":"NCL1","count":1,"sheets":["美国海运查询表 (2)"],"zip":""},{"code":"OAK3","count":6,"sheets":["美国海外仓系列","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西北","美西直送系列"],"zip":""},{"code":"OKC2","count":4,"sheets":["美中-休斯顿","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"ONT8","count":5,"sheets":["美国空卡（8）","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西直送系列"],"zip":""},{"code":"ORD2","count":5,"sheets":["美中-芝加哥","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"ORF2","count":6,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"PBI2","count":2,"sheets":["美东南海陆系列","美东南直航系列"],"zip":""},{"code":"PBI3","count":5,"sheets":["美东-海铁系列","美东-海陆系列","美东南海陆系列","美东南直航系列","美东直航系列"],"zip":""},{"code":"PCW1","count":1,"sheets":["美中-芝加哥"],"zip":""},{"code":"PDX6","count":1,"sheets":["美西北"],"zip":""},{"code":"PDX7","count":5,"sheets":["美国海外仓系列","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西北"],"zip":""},{"code":"PHL4","count":3,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列"],"zip":""},{"code":"PHX5","count":3,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"PHX7","count":3,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"PIT2","count":3,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列"],"zip":""},{"code":"POC1","count":4,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西直送系列"],"zip":""},{"code":"POC2","count":4,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西直送系列"],"zip":""},{"code":"POC3","count":5,"sheets":["美国空卡（8）","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西直送系列"],"zip":""},{"code":"PSC2","count":5,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西北","美西直送系列"],"zip":""},{"code":"PSP3","count":4,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西直送系列"],"zip":""},{"code":"QXY5","count":1,"sheets":["美西北"],"zip":""},{"code":"QXY8","count":4,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西直送系列"],"zip":""},{"code":"QZZ7","count":3,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"RDU2","count":8,"sheets":["美东-海铁系列","美东-海陆系列","美东南海陆系列","美东南直航系列","美东直航系列","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"RFD2","count":8,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列","美中-芝加哥","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"RFD3","count":1,"sheets":["美中-芝加哥"],"zip":""},{"code":"RFD4","count":1,"sheets":["美中-芝加哥"],"zip":""},{"code":"RMN3","count":7,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"RNO4","count":2,"sheets":["美西北","美西直送系列"],"zip":""},{"code":"RYY2","count":5,"sheets":["美东-海铁系列","美东-海陆系列","美东南海陆系列","美东南直航系列","美东直航系列"],"zip":""},{"code":"SAT1","count":5,"sheets":["美中-休斯顿","美国海外仓系列","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"SAT4","count":4,"sheets":["美中-休斯顿","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"SAT6","count":1,"sheets":["美中-休斯顿"],"zip":""},{"code":"SAV3","count":3,"sheets":["美东南海陆系列","美东南直航系列","美国海外仓系列"],"zip":""},{"code":"SBD1","count":5,"sheets":["美国空卡（8）","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西直送系列"],"zip":""},{"code":"SBD2","count":4,"sheets":["美国海外仓系列","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"SCK1","count":5,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西北","美西直送系列"],"zip":""},{"code":"SCK3","count":5,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西北","美西直送系列"],"zip":""},{"code":"SCK4","count":5,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西北","美西直送系列"],"zip":""},{"code":"SCK8","count":5,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西北","美西直送系列"],"zip":""},{"code":"SDF8","count":1,"sheets":["美中-芝加哥"],"zip":""},{"code":"SDF9","count":1,"sheets":["美中-芝加哥"],"zip":""},{"code":"SJC7","count":5,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西北","美西直送系列"],"zip":""},{"code":"SLC2","count":3,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"SLC3","count":3,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"SMF1","count":3,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"SMF3","count":5,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西北","美西直送系列"],"zip":""},{"code":"SMF6","count":5,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西北","美西直送系列"],"zip":""},{"code":"SMF7","count":2,"sheets":["美西北","美西直送系列"],"zip":""},{"code":"SNA4","count":3,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"STL3","count":4,"sheets":["美中-芝加哥","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"STL4","count":4,"sheets":["美中-芝加哥","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"STL8","count":1,"sheets":["美中-芝加哥"],"zip":""},{"code":"SWF1","count":7,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列","美国海外仓系列","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"SWF2","count":7,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"TCY1","count":5,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西北","美西直送系列"],"zip":""},{"code":"TCY2","count":5,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西北","美西直送系列"],"zip":""},{"code":"TEB3","count":5,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列","美国海外仓系列"],"zip":""},{"code":"TEB4","count":7,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列","美国海外仓系列","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"TEB6","count":5,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列","美国海外仓系列"],"zip":""},{"code":"TEB9","count":7,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"TOL3","count":4,"sheets":["美中-芝加哥","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"TPA2","count":9,"sheets":["美东-海铁系列","美东-海陆系列","美东南海陆系列","美东南直航系列","美东直航系列","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"TPA3","count":10,"sheets":["美东-海铁系列","美东-海陆系列","美东南海陆系列","美东南直航系列","美东直航系列","美国海外仓系列","美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"VGT2","count":4,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)","美西直送系列"],"zip":""},{"code":"XEW5","count":3,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列"],"zip":""},{"code":"XLP1","count":1,"sheets":["美国海运查询表 (2)"],"zip":""},{"code":"XLX1","count":4,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列"],"zip":""},{"code":"XLX6","count":6,"sheets":["美东-海铁系列","美东-海陆系列","美东南海陆系列","美东南直航系列","美东直航系列"],"zip":""},{"code":"XLX7","count":3,"sheets":["美西-以星&普船(17-26)","美西-先查后装系列","美西-美森(12-17)"],"zip":""},{"code":"XPB2","count":2,"sheets":["美东南海陆系列","美东南直航系列"],"zip":""},{"code":"XRI3","count":3,"sheets":["美东-海铁系列","美东-海陆系列","美东直航系列"],"zip":""}];
-let FREIGHT_WAREHOUSE_MAP = new Map(
-  REFERENCE_FREIGHT_FC.map(x=>[x.code,{code:x.code,count:x.count||0,sheets:x.sheets||[],zip:x.zip||"",source:"参考货代表2026-09-10"}])
-);
-const WAREHOUSE_DB = [
-  {code:"SBD1",zip:"92316-3819",city:"Bloomington",state:"CA",address:"3388 S Cactus Ave",src:"2026-04/2026 public lists"},
-  {code:"SBD2",zip:"92408-2805",city:"San Bernardino",state:"CA",address:"1494 S Waterman Ave",src:"2026-04 list"},
-  {code:"SBD3",zip:"92407-1833",city:"San Bernardino",state:"CA",address:"5990 N Cajon Blvd",src:"2026-04 list"},
-  {code:"SCK1",zip:"95215-9465",city:"Stockton",state:"CA",address:"4532 Newcastle Rd",src:"2026-04 list"},
-  {code:"SCK3",zip:"95336-8696",city:"Manteca",state:"CA",address:"3565 N Airport Way",src:"2026-04 list"},
-  {code:"SCK4",zip:"95215-8354",city:"Stockton",state:"CA",address:"6001 S Austin Rd",src:"2026-04 list"},
-  {code:"SCK8",zip:"94561-2677",city:"Oakley",state:"CA",address:"4700 Wilbur Ave",src:"2026-04 list"},
-  {code:"ONT2",zip:"92408-0123",city:"San Bernardino",state:"CA",address:"1910 E Central Ave",src:"Amazon Seller Central public list"},
-  {code:"ONT4",zip:"92408-0123",city:"San Bernardino",state:"CA",address:"1910 E Central Ave",src:"Amazon Seller Central public list"},
-  {code:"ONT7",zip:"92408-2606",city:"San Bernardino",state:"CA",address:"2020 E Central Ave",src:"Amazon Seller Central public list"},
-  {code:"SJC7",zip:"95377-8906",city:"Tracy",state:"CA",address:"188 Mountain House Pkwy",src:"Amazon Seller Central public list"},
-  {code:"OAK4",zip:"95304-9370",city:"Tracy",state:"CA",address:"1555 N Chrisman Rd",src:"Amazon Seller Central public list"},
-  {code:"OAK6",zip:"95304-9370",city:"Tracy",state:"CA",address:"1350 N MacArthur Dr",src:"Amazon Seller Central public list"},
-  {code:"GYR1",zip:"85338",city:"Goodyear",state:"AZ",address:"605 S Bullard Ave",src:"2026 public list"},
-  {code:"MDW2",zip:"60433-3280",city:"Joliet",state:"IL",address:"250 Emerald Dr",src:"Amazon Seller Central public list"},
-  {code:"MDW4",zip:"60433-3281",city:"Joliet",state:"IL",address:"201 Emerald Dr",src:"Amazon Seller Central public list"},
-  {code:"MDW6",zip:"60446-6529",city:"Romeoville",state:"IL",address:"1125 W Remington Blvd",src:"Amazon Seller Central public list"},
-  {code:"MDW7",zip:"60449-8316",city:"Monee",state:"IL",address:"6605 Monee Manhattan Rd",src:"Amazon Seller Central public list"},
-  {code:"MDW8",zip:"60085",city:"Waukegan",state:"IL",address:"1750 Bridge Dr",src:"Amazon Seller Central public list"},
-  {code:"MDW9",zip:"60502-8200",city:"Aurora",state:"IL",address:"2865 Duke Pkwy",src:"Amazon Seller Central public list"},
-  {code:"ORD6",zip:"60191",city:"Wood Dale",state:"IL",address:"1250 N Mittel Blvd",src:"Amazon Seller Central public list"},
-  {code:"PPO4",zip:"46410",city:"Merrillville",state:"IN",address:"9850 Mississippi St",src:"2026 public list",upsAlt:"1 UPS Way, Plainfield, IN 46168",upsZip:"46168"},
-  {code:"IAH3",zip:"77032",city:"Houston",state:"TX",address:"15525 Milner Rd",src:"2026-06 public list"},
-  {code:"RDU2",zip:"27577",city:"Smithfield",state:"NC",address:"2150 US Hwy 70 Business West",src:"2026-06 public list"},
-  {code:"RDU4",zip:"28303",city:"Fayetteville",state:"NC",address:"6309 Bragg Blvd",src:"2026-04 list"},
-  {code:"ABE8",zip:"08518-2200",city:"Florence",state:"NJ",address:"401 Independence Rd",src:"2026-04 list"},
-  {code:"TEB9",zip:"08873",city:"Somerset",state:"NJ",address:"601 Randolph Rd",src:"2026 public list"},
-  {code:"TTN2",zip:"08512-3253",city:"Cranbury",state:"NJ",address:"343 Half Acre Rd",src:"2026 public list"},
-  {code:"LBE1",zip:"15672-9703",city:"New Stanton",state:"PA",address:"165 Glenn Fox Rd",src:"2026 public list",upsAlt:"165 Glen Fox Rd, Greensburg, PA 15605",upsZip:"15605"},
-  {code:"PBI3",zip:"34986",city:"Port Saint Lucie",state:"FL",address:"7600 LTC Parkway",src:"2026 public list",upsAlt:"Amazon/UPS alternate address may differ; use current box label",upsZip:""},
-  {code:"BNA6",zip:"37040-5502",city:"Clarksville",state:"TN",address:"3875 Guthrie Hwy",src:"2026 public list",upsAlt:"3207 Whites Creek Pike, Nashville, TN 37207",upsZip:"37207"},
-  {code:"TPA6",zip:"34475-4625",city:"Ocala",state:"FL",address:"3400 NW 35th Avenue Rd",src:"2026 public list"},
-  {code:"SWF2",zip:"12533-6159",city:"Hopewell Junction",state:"NY",address:"76 Patriot Way",src:"2026-06 public list"},
-  {code:"RFD2",zip:"60142",city:"Huntley",state:"IL",address:"11500 Freeman Rd",src:"2026-06 public list"},
-  {code:"RFD4",zip:"60142-8075",city:"Huntley",state:"IL",address:"11400 Venture Ct",src:"2026-04 list"},
-  {code:"RIC1",zip:"23803-6917",city:"Petersburg",state:"VA",address:"5000 Commerce Way",src:"2026-04 list"},
-  {code:"RIC2",zip:"23836-2841",city:"Chester",state:"VA",address:"1901 Meadowville Technology Pkwy",src:"2026-04 list"},
-  {code:"RIC4",zip:"23227",city:"Richmond",state:"VA",address:"5901 Richmond Henrico Tpke",src:"2026-04 list"},
-  {code:"SDF8",zip:"47130-7761",city:"Jeffersonville",state:"IN",address:"900 Patrol Rd",src:"2026-04 list"},
-  {code:"IND1",zip:"46075-4412",city:"Whitestown",state:"IN",address:"4255 Anson Blvd",src:"Amazon Seller Central public list"},
-  {code:"IND4",zip:"46231-1132",city:"Indianapolis",state:"IN",address:"710 S Girls School Rd",src:"Amazon Seller Central public list"},
-  {code:"IND7",zip:"46241-9605",city:"Indianapolis",state:"IN",address:"9101 Orly Dr",src:"Amazon Seller Central public list"},
-  {code:"MCI7",zip:"66031",city:"New Century",state:"KS",address:"27200 W 157th St",src:"Amazon Seller Central public list"},
-  {code:"CVG8",zip:"41042",city:"Florence",state:"KY",address:"7968 Kentucky Dr",src:"Amazon Seller Central public list"},
-  {code:"EWR2",zip:"08854",city:"Piscataway",state:"NJ",address:"1570 S Washington Ave",src:"2026 public list"},
-  {code:"GYR3",zip:"85043-2356",city:"Phoenix",state:"AZ",address:"8181 W Roosevelt St",src:"2026 public list"},
-  {code:"DEN7",zip:"80019-3609",city:"Aurora",state:"CO",address:"22300 E 26th Ave",src:"2026 public list"},
-  {code:"DSM5",zip:"50035-1447",city:"Bondurant",state:"IA",address:"500 32nd St SW",src:"2026 public list"},
-  {code:"GSO1",zip:"27284-6855",city:"Kernersville",state:"NC",address:"1656 Old Greensboro Rd",src:"2026 public list"},
-  {code:"HOU7",zip:"77064-1111",city:"Houston",state:"TX",address:"16225 Tomball Pkwy",src:"2026 public list"},
-  {code:"BFL1",zip:"93308-9755",city:"Bakersfield",state:"CA",address:"1601 Petrol Rd",src:"2026 public list"}
-];
-
-function warehouseUnion(){
-  const map=new Map();
-  WAREHOUSE_DB.forEach(w=>map.set(w.code,{...w,freightSupported:false,freightCount:0,freightSheets:[]}));
-  FREIGHT_WAREHOUSE_MAP.forEach((f,code)=>{
-    if(map.has(code)){
-      const w=map.get(code);
-      w.freightSupported=true;
-      w.freightCount=f.count||f.sheets?.length||0;
-      w.freightSheets=f.sheets||[];
-      if(!w.zip && f.zip) w.zip=f.zip;
-    }else{
-      map.set(code,{
-        code,
-        zip:f.zip||"",
-        city:"",
-        state:"",
-        address:"",
-        src:f.source||"货代表自动提取",
-        freightSupported:true,
-        freightCount:f.count||f.sheets?.length||0,
-        freightSheets:f.sheets||[]
-      });
-    }
-  });
-  return [...map.values()];
-}
-function whSearch(q){
-  q=txt(q).toUpperCase();
-  let rows=warehouseUnion();
-  if(q){
-    rows=rows.filter(w=>
-      w.code.includes(q) ||
-      txt(w.zip).toUpperCase().includes(q) ||
-      txt(w.city).toUpperCase().includes(q) ||
-      txt(w.state).toUpperCase().includes(q) ||
-      txt(w.address).toUpperCase().includes(q) ||
-      (w.freightSheets||[]).join(" ").toUpperCase().includes(q)
-    );
-  }else{
-    rows=rows.filter(w=>w.freightSupported);
-  }
-  rows.sort((a,b)=>{
-    const ae=q && a.code===q ? 0 : (q && a.code.startsWith(q) ? 1 : 2);
-    const be=q && b.code===q ? 0 : (q && b.code.startsWith(q) ? 1 : 2);
-    if(ae!==be)return ae-be;
-    if(a.freightSupported!==b.freightSupported)return a.freightSupported?-1:1;
-    if(!!a.zip!==!!b.zip)return a.zip?-1:1;
-    return (b.freightCount||0)-(a.freightCount||0) || a.code.localeCompare(b.code);
-  });
-  return rows.slice(0,30);
-}
-function searchWarehouse(i,q){
-  shipmentData[i].fc=txt(q).toUpperCase();
-  shipmentData[i].whVerified=false;
-  const box=$("whDrop_"+i); if(!box)return;
-  const hits=whSearch(q);
-  box.innerHTML=hits.length?hits.map(w=>{
-    const loc=w.zip ? `${esc(w.city||"")} ${esc(w.state||"")} ${esc(w.zip)}`.trim() : "邮编待核验";
-    const sheets=(w.freightSheets||[]).slice(0,3).join(" / ");
-    const more=(w.freightSheets||[]).length>3?` +${w.freightSheets.length-3}`:"";
-    return `<div class="wh-item" onmousedown="selectWarehouse(${i},'${w.code}')">
-      <div><span class="wh-code">${w.code}</span>${loc}
-        ${w.freightSupported?`<span class="wh-freight">货代支持 ${w.freightSheets.length||w.freightCount||1}</span>`:""}
-        ${!w.zip?`<span class="wh-nzip">需邮编</span>`:""}
-      </div>
-      <div class="wh-meta">${w.address?esc(w.address):"来自货代表仓库代码库"}${w.upsAlt?` · UPS特殊地址提醒`:""}</div>
-      ${w.freightSupported?`<div class="wh-meta">线路：${esc(sheets)}${more}</div>`:""}
-    </div>`;
-  }).join(""):`<div class="wh-item muted">没有匹配仓库；可继续手填仓库代码</div>`;
-  box.classList.add("show");
-}
-function selectWarehouse(i,code){
-  const w=warehouseUnion().find(x=>x.code===code); if(!w)return;
-  const sh=shipmentData[i];
-  sh.fc=w.code;
-  if(w.zip) sh.zip=w.zip;
-  sh.city=w.city||"";
-  sh.state=w.state||"";
-  sh.address=w.address||"";
-  sh.whVerified=!!w.zip;
-  sh.freightSupported=!!w.freightSupported;
-  sh.freightSheets=w.freightSheets||[];
-  sh.upsAlt=w.upsAlt||"";
-  sh.upsZip=w.upsZip||"";
-  renderShipments();
-}
-function manualZip(i,v){
-  shipmentData[i].zip=txt(v);
-  renderShipments();
-}
-document.addEventListener("click",e=>{
-  if(!e.target.closest(".wh-field"))document.querySelectorAll(".wh-dropdown").forEach(x=>x.classList.remove("show"));
-});
+(()=>{
+"use strict";
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const BUILTIN_RAW=["30*30*30","35*35*35","40*30*25","40*30*30","40*35*35","40*40*30","40*40*35","40*40*40","45*35*25","45*35*38","45*40*35","45*40*40","45*44*29","45*45*30","45*45*35","45*45*45","48*38*28","50*35*30","50*40*23","50*40*30","50*40*35","50*40*40","50*40*42","50*40*45","50*40*50","50*42*32","50*45*45","50*50*50","53*40*40","54*36*19","54*46*52","55*35*35","55*39*29","55*40*35","55*40*40","55*45*40","55*45*45","55*50*30","55*55*30","60*40*40","60*45*33","60*45*45","60*45*50","60*50*50","65*40*50"];
+const STORE="packing_custom_boxes_v3";
+const builtins=BUILTIN_RAW.map((s,i)=>{const [l,w,h]=s.split("*").map(Number);return{id:`b${i+1}`,name:`内置 ${String(i+1).padStart(2,"0")}`,l,w,h,builtin:true}});
+let customBoxes=[];try{customBoxes=JSON.parse(localStorage.getItem(STORE)||"[]")}catch{}
+let goal="balanced",plans=[];
+let currentPage="auto", manualViewerState={yaw:-.68,pitch:.58,drag:false,x:0,y:0,mode:null,dragItemId:null}, manualInventory=[], manualPlaced=[], manualSchemes=[], selectedPlacedId=null, boardDragFromInventoryId=null;
+const n=(v,d=0)=>{const x=Number(v);return Number.isFinite(x)?x:d};
+const fmt=(v,d=1)=>n(v).toLocaleString("zh-CN",{minimumFractionDigits:d,maximumFractionDigits:d});
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const ceilStep=(x,step)=>Math.ceil((x-1e-9)/step)*step;
+const dimsSorted=a=>[...a].sort((x,y)=>y-x);
+function toast(msg){const e=$("#toast");e.textContent=msg;e.classList.add("show");clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove("show"),1800)}
+function boxKey(b){return `${b.l}×${b.w}×${b.h}`}
+function planKey(p){const arr=p.mixed?mixedPlacementSignature(p.mixedPlacement||[]):`${(p.orientation||[]).join("×")}|${(p.grid||[]).join("×")}`;return `${p.source}|${boxKey(p.box)}|${arr}`}
+function allBoxes(){return [...builtins,...customBoxes]}
+function persistBoxes(){localStorage.setItem(STORE,JSON.stringify(customBoxes))}
+function renderBoxes(){const list=allBoxes();$("#boxCount").textContent=list.length;$("#boxLib").innerHTML=list.map(b=>`<span class="boxchip ${b.builtin?"":"custom"}" title="${b.builtin?"来自内置箱规.xlsx":"自定义箱规"}">${b.l}×${b.w}×${b.h}${b.builtin?"":" · 自定义"}</span>`).join("")}
+function skuRow(v={name:"",l:"",w:"",h:"",weight:"",qty:1,rotate:true}){const tr=document.createElement("tr");tr.innerHTML=`<td><input class="sku-name" value="${esc(v.name)}" placeholder="SKU-${$("#skuBody").children.length+1}"></td><td><input data-k="l" type="number" min=".1" step=".1" value="${v.l}"></td><td><input data-k="w" type="number" min=".1" step=".1" value="${v.w}"></td><td><input data-k="h" type="number" min=".1" step=".1" value="${v.h}"></td><td><input data-k="weight" type="number" min=".001" step=".01" value="${v.weight}"></td><td><input data-k="qty" type="number" min="1" step="1" value="${v.qty}"></td><td style="text-align:center"><input class="rotate" type="checkbox" ${v.rotate?"checked":""}></td><td><button class="btn small danger del">删除</button></td>`;tr.querySelector(".del").onclick=()=>{tr.remove();countSku()};$("#skuBody").appendChild(tr);countSku()}
+function countSku(){$("#skuCount").textContent=`${$("#skuBody").children.length} 个 SKU`}
+function readSkus(){return [...$("#skuBody").children].map((tr,i)=>{const o={};tr.querySelectorAll("[data-k]").forEach(x=>o[x.dataset.k]=n(x.value));o.name=tr.querySelector(".sku-name").value.trim()||`SKU-${i+1}`;o.qty=Math.floor(o.qty);o.rotate=tr.querySelector(".rotate").checked;return o}).filter(s=>s.l>0&&s.w>0&&s.h>0&&s.weight>0&&s.qty>0)}
+function orientations(s){const raw=s.rotate?[[s.l,s.w,s.h],[s.l,s.h,s.w],[s.w,s.l,s.h],[s.w,s.h,s.l],[s.h,s.l,s.w],[s.h,s.w,s.l]]:[[s.l,s.w,s.h]];const seen=new Set();return raw.filter(d=>{const k=d.join("|");if(seen.has(k))return false;seen.add(k);return true})}
 
 
-function defaultShipment(){
-  return {id:shipmentSeq++,fc:"SBD1",zip:"92316-3819",city:"Bloomington",state:"CA",address:"3388 S Cactus Ave",whVerified:true,upsAlt:"",upsZip:"",boxes:20,L:60,W:45,H:40,kg:22};
-}
-let shipmentData=[defaultShipment()];
-
-function renderShipments(){
-  $("shipments").innerHTML=shipmentData.map((s,i)=>`
-    <div class="ship-table">
-      <div class="field wh-field"><label>Amazon目的仓（代码/城市/邮编搜索）</label>
-        <input id="fcInput_${i}" value="${esc(s.fc)}" autocomplete="off"
-          oninput="searchWarehouse(${i},this.value)" onfocus="searchWarehouse(${i},this.value)"
-          onchange="updShip(${i},'fc',this.value.toUpperCase())" placeholder="如 SBD1 / Joliet / 92316">
-        <div id="whDrop_${i}" class="wh-dropdown"></div>
-        <div id="whStatus_${i}" class="wh-status ${s.whVerified?'ok':'warn'}">${
-          s.whVerified
-            ? esc((s.city||'')+', '+(s.state||'')+' '+(s.zip||'')) + (s.freightSupported?' · 货代表可报价':'')
-            : (s.freightSupported?'货代表中有该仓，可报价；邮编未核验，快递派前需补邮编':'仓库未核验；可继续手填')
-        }</div>
-      </div>
-      <div class="field"><label>目的仓邮编（自动填充，可覆盖）</label><input value="${esc(s.zip)}" onchange="manualZip(${i},this.value)" placeholder="选择仓库后自动填"></div>
-      <div class="field"><label>箱数</label><input type="number" min="1" value="${s.boxes}" onchange="updShip(${i},'boxes',+this.value)"></div>
-      <div class="field"><label>长 cm</label><input type="number" min="0" step=".1" value="${s.L}" onchange="updShip(${i},'L',+this.value)"></div>
-      <div class="field"><label>宽 cm</label><input type="number" min="0" step=".1" value="${s.W}" onchange="updShip(${i},'W',+this.value)"></div>
-      <div class="field"><label>高 cm</label><input type="number" min="0" step=".1" value="${s.H}" onchange="updShip(${i},'H',+this.value)"></div>
-      <div class="field"><label>kg / 箱</label><input type="number" min="0" step=".1" value="${s.kg}" onchange="updShip(${i},'kg',+this.value)"></div>
-      <div class="field"><label>实重小计</label><input value="${(num(s.boxes)*num(s.kg)).toFixed(1)} kg" disabled></div>
-      <button class="danger" onclick="removeShipment(${i})" title="删除">×</button>
-    </div>`).join("");
-  updateKPIsBase();
-}
-function updShip(i,k,v){shipmentData[i][k]=v;renderShipments()}
-function addShipment(){let s=defaultShipment();s.fc="";s.zip="";s.city="";s.state="";s.address="";s.whVerified=false;s.freightSupported=false;s.freightSheets=[];shipmentData.push(s);renderShipments()}
-function removeShipment(i){if(shipmentData.length>1){shipmentData.splice(i,1);renderShipments()}}
-function resetShipments(){shipmentData=[defaultShipment()];renderShipments()}
-
-function shipMetrics(s){
-  const boxes=Math.max(0,num(s.boxes)), kgBox=Math.max(0,num(s.kg));
-  const cbmBox=Math.max(0,num(s.L)*num(s.W)*num(s.H)/1e6);
-  return {boxes,kgBox,totalKg:boxes*kgBox,cbmBox,totalCbm:boxes*cbmBox,longest:Math.max(num(s.L),num(s.W),num(s.H)),dims:[num(s.L),num(s.W),num(s.H)].sort((a,b)=>b-a)};
-}
-function updateKPIsBase(){
-  let kg=0,cbm=0; shipmentData.forEach(s=>{const m=shipMetrics(s);kg+=m.totalKg;cbm+=m.totalCbm});
-  $("kWeight").textContent=kg.toFixed(1)+" kg"; $("kCbm").textContent=cbm.toFixed(3)+" CBM";
-}
-renderShipments();
-
-$("file").addEventListener("change",async e=>{
-  const f=e.target.files[0]; if(!f)return;
-  if(typeof XLSX==="undefined"){ $("fileStatus").innerHTML='<span class="bad">Excel 解析组件未加载。请联网后重新打开网页再上传。</span>'; return; }
-  try{
-    const ab=await f.arrayBuffer();
-    WB=XLSX.read(ab,{type:"array",cellText:true,cellDates:true});
-    SHEETS={}; WB.SheetNames.forEach(n=>SHEETS[n]=XLSX.utils.sheet_to_json(WB.Sheets[n],{header:1,defval:"",raw:false}));
-    TEMPLATE=["美国快递","美国快递组合","快递小货价","发货须知-美国&英国"].every(n=>SHEETS[n])?"ansu":"generic";
-    $("templateTag").className="tag "+(TEMPLATE==="ansu"?"g":"a");
-    $("templateTag").textContent=TEMPLATE==="ansu"?"安速模板 · 精准模式":"其他模板 · 候选识别";
-    const covered=["美国快递","美国快递组合","快递小货价","美国空卡（8）","发货须知-美国&英国","全区邮编系列-特殊地址附加费","偏远邮编库"].filter(n=>SHEETS[n]).length;
-    const mappedCount=mappedSeaDefinitions().length;
-    const usSheets=WB.SheetNames.filter(n=>/美国|美西|美东|美中/.test(n)).length;
-    const extractedFc=buildFreightWarehouseCatalogFromWorkbook();
-    const whStats=freightWarehouseStats();
-    $("fileStatus").innerHTML=`<span class="ok">已读取 ${esc(f.name)}，共 ${WB.SheetNames.length} 个工作表。</span> ${TEMPLATE==="ansu"?"已启用安速原生定位映射。":"未命中安速结构，新模板的低置信度结果不会自动推荐。"}<br>
-      覆盖诊断：美国相关Sheet ${usSheets} 个；原生定位海运主渠道 ${mappedCount} 条；重点规则/快递表 ${covered}/7 个。<br>
-      <b>仓库库：</b>当前货代表提取 ${extractedFc} 个FC代码；合并参考货代表后可选 ${whStats.total} 个货代支持仓，其中 ${whStats.withZip} 个可自动填邮编、${whStats.needZip} 个仓邮编需在快递派前核验。`;
-    buildOriginList();
-    renderShipments();
-  }catch(err){$("fileStatus").innerHTML='<span class="bad">读取失败：'+esc(err.message)+'</span>'}
-});
+function allOrientationsForSku(s){return orientations(s)}
+function switchPage(page){currentPage=page;$$('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page));$('#page-auto').classList.toggle('hidden',page!=="auto");$('#page-manual').classList.toggle('hidden',page!=="manual");if(page==="manual"){syncManualSkuOptions();renderModelLibrary();renderArrangementSchemes();updateSelectedEditor();updateManualSummary();applyManualLayout();applyManualCanvasSize();initManualCanvas();drawManualScene()}}
+function syncManualSkuOptions(){const skus=readSkus(),sel=$("#manualSkuSelect"),count=$("#manualSkuCount");if(!sel||!count)return;count.textContent=`${skus.length} 个来源 SKU`;if(!skus.length){sel.innerHTML='<option value="">请先在页面一录入 SKU</option>';$("#manualOrient").innerHTML='';return}const prev=sel.value;sel.innerHTML=skus.map(s=>`<option value="${esc(s.name)}">${esc(s.name)} · ${s.l}×${s.w}×${s.h} cm</option>`).join('');if([...sel.options].some(o=>o.value===prev))sel.value=prev;renderManualOrientationOptions()}
+function renderManualOrientationOptions(){const sku=getSelectedSku(),sel=$("#manualOrient");if(!sel)return;if(!sku){sel.innerHTML='';return}sel.innerHTML=orientations(sku).map(d=>`<option value="${d.join('|')}">${d.join(' × ')} cm</option>`).join('')}
+function getSelectedSku(){const skus=readSkus();return skus.find(s=>s.name===$("#manualSkuSelect")?.value)||skus[0]||null}
+function getBoardDims(){return {w:Math.max(20,n($("#boardW")?.value,120)),d:Math.max(20,n($("#boardD")?.value,80)),h:Math.max(10,n($("#boardH")?.value,60))}}
+function clamp(v,min,max){return Math.max(min,Math.min(max,v))}
+function generateArrangementSchemes(){const sku=getSelectedSku();if(!sku){toast('请先在页面一录入 SKU');return}const qty=Math.max(1,Math.floor(n($("#manualQty")?.value,1))),gap=Math.max(0,n($("#manualGap")?.value,0)),dims=getBoardDims();const variants=mixedPackVariants(sku,[dims.w,dims.d,dims.h],qty,gap,14).filter(v=>v.placements.length===qty);manualSchemes=variants.map((v,i)=>{const b=mixedPlacementBBox(v.placements),mix=mixedOrientationCounts(v.placements);return{key:mixedPlacementSignature(v.placements),sku:sku.name,qty,gap,l:b.l,w:b.w,h:b.h,fill:(qty*sku.l*sku.w*sku.h)/Math.max(1,b.l*b.w*b.h),shape:Math.max(b.l,b.w,b.h)/Math.max(1,Math.min(b.l,b.w,b.h)),score:v.score,placements:v.placements,mix,mixed:mix.length>1,orientation:mix[0]?.dims||[sku.l,sku.w,sku.h],grid:null}}).sort((a,b)=>b.fill-a.fill||a.score-b.score).slice(0,8);renderArrangementSchemes();toast(manualSchemes.length?`已生成 ${manualSchemes.length} 个横竖混排方案`:'当前工作区尺寸下没有可行方案，请增大长宽高')}
+function renderArrangementSchemes(){const wrap=$("#schemeList"),count=$("#schemeCount");if(!wrap||!count)return;count.textContent=`${manualSchemes.length} 个方案`;if(!manualSchemes.length){wrap.innerHTML='<div class="manual-source-box">还没有方案。点击“生成排列方案”后，系统会尝试横放、竖放、分区补位和分层混排。</div>';return}wrap.innerHTML=manualSchemes.map((s,i)=>`<div class="scheme-card ${i===0?'best':''}"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><h4>方案 ${i+1}${i===0?' · 推荐':''}</h4><span class="scheme-score">利用率 ${fmt(s.fill*100,1)}%</span></div><div class="rows"><span>方式：<b>${s.mixed?'横竖混排':'单一朝向'}</b></span><span>朝向组合：<b>${orientationSummaryFromCounts(s.mix,4)}</b></span><span>组合外廓：<b>${fmt(s.l,1)} × ${fmt(s.w,1)} × ${fmt(s.h,1)} cm</b></span><span>实际放入：<b>${s.placements.length}</b> 件</span></div><div class="toolbar"><button class="btn small" data-loadscheme="${i}">载入到模型库</button><button class="btn small primary" data-placescheme="${i}">直接放入 3D（逐件可调）</button></div></div>`).join('');$$('[data-loadscheme]').forEach(btn=>btn.onclick=()=>loadScheme(Number(btn.dataset.loadscheme),false));$$('[data-placescheme]').forEach(btn=>btn.onclick=()=>loadScheme(Number(btn.dataset.placescheme),true))}
+function singlePlacedFromMixed(sku,p,i,offset={x:0,y:0,z:0}){return{id:`pl-${Date.now()}-${Math.random().toString(36).slice(2,7)}-${i}`,type:'single',sku:sku.name,base:[sku.l,sku.w,sku.h],orientations:orientations(sku),orientation:[p.l,p.w,p.h],unitL:p.l,unitW:p.w,unitH:p.h,l:p.l,w:p.w,h:p.h,weightUnit:sku.weight,weight:sku.weight,x:p.x+offset.x,y:p.y+offset.y,z:p.z+offset.z,qty:1,grid:[1,1,1],gap:0,zDefault:p.z+offset.z}}
+function loadScheme(index,placeNow){const s=manualSchemes[index],sku=getSelectedSku();if(!s||!sku)return;if(placeNow){const dims=getBoardDims();if(s.l>dims.w+1e-9||s.w>dims.d+1e-9||s.h>dims.h+1e-9){toast('当前 3D 工作区放不下这个方案');return}const singles=s.placements.map((p,i)=>singlePlacedFromMixed(sku,p,i));manualPlaced.push(...singles);selectedPlacedId=singles[0]?.id||null;updateSelectedEditor();updateManualSummary();drawManualScene();toast(`方案 ${index+1} 已放入 3D；横竖混排中的每一件都可单独删除、旋转和移动`)}else{const model={id:`mix-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,type:'mixedBlock',sku:sku.name,base:[sku.l,sku.w,sku.h],orientations:orientations(sku),mixedPlacements:s.placements.map(p=>({...p})),l:s.l,w:s.w,h:s.h,qty:s.qty,weightUnit:sku.weight,weight:sku.weight*s.qty,zDefault:0};manualInventory.push(model);renderModelLibrary();toast(`方案 ${index+1} 已作为横竖混排组合载入模型库`)}}
+function createModelFromInputs(mode='single'){const sku=getSelectedSku();if(!sku){toast('请先在页面一录入 SKU');return null}const d=($("#manualOrient")?.value||'').split('|').map(Number);if(d.length!==3||d.some(v=>!Number.isFinite(v)||v<=0)){toast('请选择有效方向');return null}const qty=mode==='single'?1:Math.max(1,Math.floor(n($("#manualQty")?.value,1)));const zDefault=Math.max(0,n($("#manualDefaultZ")?.value,0));const gap=Math.max(0,n($("#manualGap")?.value,0));const nx=Math.max(1,Math.floor(n($("#manualNx")?.value,1))),ny=Math.max(1,Math.floor(n($("#manualNy")?.value,1))),nz=Math.max(1,Math.floor(n($("#manualNz")?.value,1)));const type=mode==='single'?'single':'block';const grid=type==='single'?[1,1,1]:[nx,ny,nz];const cap=grid[0]*grid[1]*grid[2];if(type==='block'&&cap<qty){toast(`组合块 ${grid.join('×')} 最多容纳 ${cap} 件，请增大 X/Y/Z`);return null}return makeInventoryModel(sku,d,qty,grid,gap,zDefault,type)}
+function makeInventoryModel(sku,d,qty,grid,gap,zDefault,type){const model={id:`mdl-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,type,sku:sku.name,base:[sku.l,sku.w,sku.h],orientations:orientations(sku),orientation:[...d],unitL:d[0],unitW:d[1],unitH:d[2],weightUnit:sku.weight,qty,grid:[...grid],gap,zDefault};recalcModelDims(model);return model}
+function recalcModelDims(model){if(model.type==='block'){model.l=model.grid[0]*model.unitL+(model.grid[0]-1)*model.gap;model.w=model.grid[1]*model.unitW+(model.grid[1]-1)*model.gap;model.h=model.grid[2]*model.unitH+(model.grid[2]-1)*model.gap}else{model.l=model.unitL;model.w=model.unitW;model.h=model.unitH}model.weight=(model.weightUnit||0)*(model.qty||1);return model}
+function createInventoryModels(single=false){const model=createModelFromInputs(single?'single':'block');if(!model)return;manualInventory.push(model);renderModelLibrary();toast(single?'已生成 1 个模型':'已生成 1 个组合块')}
+function autoPlaceBlock(){const model=createModelFromInputs('block');if(!model)return;const pos=findAutoSpot(model);if(!pos){toast('工作区放不下这个组合块，请增大工作区或调整组合');return}const placed={...model,id:`pl-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,x:pos.x,y:pos.y,z:pos.z??model.zDefault??0};manualPlaced.push(placed);selectedPlacedId=placed.id;updateSelectedEditor();updateManualSummary();drawManualScene();toast('已自动铺入 3D 场景')}
+function renderModelLibrary(){const wrap=$("#modelLibrary"),count=$("#inventoryCount");if(!wrap||!count)return;count.textContent=`${manualInventory.length} 个模型`;wrap.innerHTML=manualInventory.length?manualInventory.map(m=>`<div class="sku-model" draggable="true" data-invid="${m.id}" title="拖到右侧 3D 场景"><div><b>${esc(m.sku)}</b><small>${m.type==='mixedBlock'?'混合组合':m.type==='block'?'组合块':'单件'} · ${m.l}×${m.w}×${m.h} cm</small><div class="meta">${m.type==='mixedBlock'?`数量 ${m.qty} · 横竖混排`:m.type==='block'?`数量 ${m.qty} · ${m.grid.join('×')}`:'单件模型'} </div></div><small>拖到 3D 场景</small></div>`).join(''):`<div class="manual-source-box">模型库为空，请先在上方生成 SKU 模型。</div>`;$$('[data-invid]').forEach(el=>el.ondragstart=e=>{boardDragFromInventoryId=el.dataset.invid;e.dataTransfer?.setData('text/plain',el.dataset.invid)})}
+function flattenPlacedItems(items){const out=[];items.forEach(parent=>{if(parent.type==='block'){let k=0;for(let z=0;z<parent.grid[2]&&k<parent.qty;z++)for(let y=0;y<parent.grid[1]&&k<parent.qty;y++)for(let x=0;x<parent.grid[0]&&k<parent.qty;x++){out.push({parentId:parent.id,sku:parent.sku,x:parent.x+x*(parent.unitL+parent.gap),y:parent.y+y*(parent.unitW+parent.gap),z:parent.z+z*(parent.unitH+parent.gap),l:parent.unitL,w:parent.unitW,h:parent.unitH,weight:parent.weightUnit||0});k++}}else out.push({parentId:parent.id,sku:parent.sku,x:parent.x,y:parent.y,z:parent.z,l:parent.l,w:parent.w,h:parent.h,weight:parent.weightUnit||parent.weight||0})});return out}
+function explodeModelToSingles(model,origin){const placed={...model,x:origin.x,y:origin.y,z:origin.z};return flattenPlacedItems([placed]).map((c,i)=>({id:`pl-${Date.now()}-${Math.random().toString(36).slice(2,7)}-${i}`,type:'single',sku:model.sku,base:model.base,orientations:model.orientations,orientation:[...model.orientation],unitL:model.unitL,unitW:model.unitW,unitH:model.unitH,l:c.l,w:c.w,h:c.h,weightUnit:model.weightUnit,weight:model.weightUnit||0,x:c.x,y:c.y,z:c.z,qty:1,grid:[1,1,1],gap:0,zDefault:c.z}))}
+function computePlacedBBox(items){const flat=flattenPlacedItems(items);if(!flat.length)return {minX:0,minY:0,minZ:0,maxX:0,maxY:0,maxZ:0,l:0,w:0,h:0,boxVol:0,itemVol:0,fill:0,totalWeight:0};let minX=Infinity,minY=Infinity,minZ=Infinity,maxX=-Infinity,maxY=-Infinity,maxZ=-Infinity,itemVol=0,totalWeight=0;flat.forEach(it=>{minX=Math.min(minX,it.x);minY=Math.min(minY,it.y);minZ=Math.min(minZ,it.z);maxX=Math.max(maxX,it.x+it.l);maxY=Math.max(maxY,it.y+it.w);maxZ=Math.max(maxZ,it.z+it.h);itemVol+=it.l*it.w*it.h;totalWeight+=it.weight||0});const l=Math.max(0,maxX-minX),w=Math.max(0,maxY-minY),h=Math.max(0,maxZ-minZ),boxVol=l*w*h,fill=boxVol>0?itemVol/boxVol:0;return {minX,minY,minZ,maxX,maxY,maxZ,l,w,h,boxVol,itemVol,fill,totalWeight}}
+function boxOverlap3D(a,b){return !(a.x+a.l<=b.x||b.x+b.l<=a.x||a.y+a.w<=b.y||b.y+b.w<=a.y||a.z+a.h<=b.z||b.z+b.h<=a.z)}
+function collides(item,excludeId=null){return manualPlaced.some(o=>o.id!==excludeId&&boxOverlap3D(item,o))}
+function findAutoSpot(model){const dims=getBoardDims(),zLevels=[0,...manualPlaced.map(o=>o.z+o.h).filter(z=>z<=dims.h-model.h+1e-9)].sort((a,b)=>a-b);for(const z of [...new Set(zLevels.map(v=>Math.round(v*10)/10))]){for(let y=0;y<=dims.d-model.w;y+=1){for(let x=0;x<=dims.w-model.l;x+=1){const pos=snapPlacedPosition(model,x,y);const test={...model,x:pos.x,y:pos.y,z};if(z+model.h<=dims.h+1e-9&&!collides(test))return {...pos,z}}}}return null}
+function snapAxis(val,cands,min,max,threshold=2){let best=clamp(val,min,max),dist=threshold+1;for(const c of cands){const cc=clamp(c,min,max),d=Math.abs(val-cc);if(d<dist){dist=d;best=cc}}return dist<=threshold?best:clamp(val,min,max)}
+function snapPlacedPosition(item,x,y,excludeId=null){const dims=getBoardDims();const xs=[0,dims.w-item.l],ys=[0,dims.d-item.w];manualPlaced.forEach(o=>{if(o.id===excludeId)return;xs.push(o.x-item.l,o.x+o.l,o.x,o.x+o.l-item.l);ys.push(o.y-item.w,o.y+o.w,o.y,o.y+o.w-item.w)});return {x:snapAxis(x,xs,0,Math.max(0,dims.w-item.l)),y:snapAxis(y,ys,0,Math.max(0,dims.d-item.w))}}
+function placeInventoryModel(id,dropPX,dropPY,canvasRect){const idx=manualInventory.findIndex(m=>m.id===id);if(idx<0)return;const base=manualInventory.splice(idx,1)[0],dims=getBoardDims();const rawX=(dropPX/canvasRect.width)*dims.w-base.l/2,rawY=(dropPY/canvasRect.height)*dims.d-base.w/2;const pos=snapPlacedPosition(base,rawX,rawY);if(base.type==='mixedBlock'){const sku=readSkus().find(s=>s.name===base.sku)||{name:base.sku,l:base.base[0],w:base.base[1],h:base.base[2],weight:base.weightUnit,rotate:true};const offset={x:pos.x,y:pos.y,z:clamp(base.zDefault||0,0,Math.max(0,dims.h-base.h))};const singles=base.mixedPlacements.map((p,i)=>singlePlacedFromMixed(sku,p,i,offset));manualPlaced.push(...singles);selectedPlacedId=singles[0]?.id||null}else{const placed={...base,id:`pl-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,x:pos.x,y:pos.y,z:clamp(base.zDefault||0,0,Math.max(0,dims.h-base.h))};manualPlaced.push(placed);selectedPlacedId=placed.id}renderModelLibrary();updateSelectedEditor();updateManualSummary();drawManualScene();toast('已拖入 3D 场景')}
+function updateSelectedEditor(){const badge=$("#selectedModelBadge"),info=$("#selectedModelInfo"),sel=$("#selectedOrient"),zIn=$("#selectedZ");const item=manualPlaced.find(x=>x.id===selectedPlacedId);if(!badge||!info||!sel||!zIn)return;if(!item){badge.textContent='未选中';info.textContent='请先在右侧 3D 场景中点击一个已放置模型';sel.innerHTML='';zIn.value='0';return}badge.textContent=item.type==='block'?`${item.sku}（组合块）`:item.sku;info.innerHTML=`${esc(item.sku)} · 坐标 ${fmt(item.x,1)} / ${fmt(item.y,1)} / ${fmt(item.z,1)} cm · 当前尺寸 ${fmt(item.l,1)}×${fmt(item.w,1)}×${fmt(item.h,1)} cm · ${item.type==='block'?`数量 ${item.qty}，排列 ${item.grid.join('×')}`:'单件模型'}`;sel.innerHTML=item.orientations.map(d=>`<option value="${d.join('|')}" ${d.join('|')===item.orientation.join('|')?'selected':''}>${d.join(' × ')} cm</option>`).join('');zIn.value=String(item.z)}
+function applySelectedOrientation(){const item=manualPlaced.find(x=>x.id===selectedPlacedId);if(!item)return;const d=($("#selectedOrient")?.value||'').split('|').map(Number);if(d.length!==3||d.some(v=>!Number.isFinite(v)||v<=0))return;item.orientation=[...d];item.unitL=d[0];item.unitW=d[1];item.unitH=d[2];recalcModelDims(item);const pos=snapPlacedPosition(item,item.x,item.y,item.id);item.x=pos.x;item.y=pos.y;updateSelectedEditor();updateManualSummary();drawManualScene()}
+function rotateSelectedModel(){const item=manualPlaced.find(x=>x.id===selectedPlacedId);if(!item)return;const idx=item.orientations.findIndex(d=>d.join('|')===item.orientation.join('|'));const next=item.orientations[(idx+1)%item.orientations.length];$("#selectedOrient").value=next.join('|');applySelectedOrientation()}
+function updateSelectedZ(){const item=manualPlaced.find(x=>x.id===selectedPlacedId);if(!item)return;const dims=getBoardDims();item.z=clamp(n($("#selectedZ")?.value,item.z),0,Math.max(0,dims.h-item.h));updateSelectedEditor();updateManualSummary();drawManualScene()}
+function splitSelectedBlock(){const idx=manualPlaced.findIndex(x=>x.id===selectedPlacedId);const item=manualPlaced[idx];if(!item){toast('请先选中一个模型');return}if(item.type!=='block'){toast('当前选中的是单件模型，无需拆分');return}const flat=flattenPlacedItems([item]).map((c,i)=>({id:`pl-${Date.now()}-${Math.random().toString(36).slice(2,7)}-${i}`,type:'single',sku:item.sku,base:item.base,orientations:item.orientations,orientation:[...item.orientation],unitL:item.unitL,unitW:item.unitW,unitH:item.unitH,l:c.l,w:c.w,h:c.h,weightUnit:item.weightUnit,weight:item.weightUnit,x:c.x,y:c.y,z:c.z,qty:1,grid:[1,1,1],gap:0,zDefault:c.z}));manualPlaced.splice(idx,1,...flat);selectedPlacedId=flat[0]?.id||null;updateSelectedEditor();updateManualSummary();drawManualScene();toast('已拆分组合块，可单独微调')}
+function deleteSelectedPlaced(){if(!selectedPlacedId)return;manualPlaced=manualPlaced.filter(x=>x.id!==selectedPlacedId);selectedPlacedId=null;updateSelectedEditor();updateManualSummary();drawManualScene();toast('已删除选中模型')}
+function returnSelectedToInventory(){const idx=manualPlaced.findIndex(x=>x.id===selectedPlacedId);if(idx<0)return;const item=manualPlaced.splice(idx,1)[0];const copy={...item,id:`mdl-${Date.now()}-${Math.random().toString(36).slice(2,7)}`};delete copy.x;delete copy.y;delete copy.z;manualInventory.push(copy);selectedPlacedId=null;renderModelLibrary();updateSelectedEditor();updateManualSummary();drawManualScene();toast('已退回模型库')}
+function enforceBoardBounds(){const dims=getBoardDims();manualPlaced.forEach(item=>{item.x=clamp(item.x,0,Math.max(0,dims.w-item.l));item.y=clamp(item.y,0,Math.max(0,dims.d-item.w));item.z=clamp(item.z,0,Math.max(0,dims.h-item.h))})}
+function updateManualSummary(){const items=manualPlaced,box=computePlacedBBox(items),flatCount=flattenPlacedItems(items).length;$("#manualTotalUnits").textContent=String(flatCount);$("#manualBBox").textContent=`${fmt(box.l,1)} × ${fmt(box.w,1)} × ${fmt(box.h,1)}`;$("#manualSkuKinds").textContent=String(new Set(flattenPlacedItems(items).map(x=>x.sku)).size);$("#manualFill").textContent=`${fmt(box.fill*100,1)}%`;const summary=$("#manualSummary");if(!summary)return;if(!items.length){summary.innerHTML='<div class="line"><span>当前状态</span><b>还没有拖入任何 SKU 模型</b></div>';return}const bySku={};flattenPlacedItems(items).forEach(it=>bySku[it.sku]=(bySku[it.sku]||0)+1);summary.innerHTML=`<div class="line"><span>最终包围尺寸</span><b>${fmt(box.l,1)} × ${fmt(box.w,1)} × ${fmt(box.h,1)} cm</b></div><div class="line"><span>整体包围体积</span><b>${fmt(box.boxVol/1e6,4)} m³</b></div><div class="line"><span>产品总体积</span><b>${fmt(box.itemVol/1e6,4)} m³</b></div><div class="line"><span>空间利用率</span><b>${fmt(box.fill*100,1)}%</b></div><div class="line"><span>总重量</span><b>${fmt(box.totalWeight,2)} kg</b></div><div class="line"><span>SKU 汇总</span><b>${Object.entries(bySku).map(([k,v])=>`${k} × ${v}`).join('；')}</b></div><div class="line"><span>当前组合</span><b>${manualPlaced.length} 个顶层模型（含组合块）</b></div>`}
+function sceneMetrics(canvas,box,st){const rect=canvas.getBoundingClientRect(),dpr=Math.min(2,window.devicePixelRatio||1);const W=Math.max(320,rect.width),H=Math.max(280,rect.height);if(canvas.width!==Math.round(W*dpr)||canvas.height!==Math.round(H*dpr)){canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr)}const L=box.l,Wd=box.w,Ht=box.h,center=[L/2,Wd/2,Ht/2],maxD=Math.max(L,Wd,Ht),zoom=n($("#manualZoom")?.value,1.05),scale=(Math.min(W*.62,H*.7)/Math.max(maxD,1))*zoom;const cy=Math.cos(st.yaw),sy=Math.sin(st.yaw),cp=Math.cos(st.pitch),sp=Math.sin(st.pitch);return {W,H,dpr,L,Wd,Ht,center,scale,cy,sy,cp,sp}}
+function sceneProject(v,m){let x=v[0]-m.center[0],y=v[1]-m.center[1],z=v[2]-m.center[2];const x1=x*m.cy-y*m.sy,y1=x*m.sy+y*m.cy,z1=z;const y2=y1*m.cp-z1*m.sp,z2=y1*m.sp+z1*m.cp;return {x:m.W/2+x1*m.scale,y:m.H*.56-z2*m.scale,depth:y2}}
+function sceneCube(o,m){const x=o.x||0,y=o.y||0,z=o.z||0,l=o.l,w=o.w,h=o.h;const vs=[[x,y,z],[x+l,y,z],[x+l,y+w,z],[x,y+w,z],[x,y,z+h],[x+l,y,z+h],[x+l,y+w,z+h],[x,y+w,z+h]].map(v=>sceneProject(v,m));const f=[[0,1,2,3],[4,7,6,5],[0,4,5,1],[1,5,6,2],[2,6,7,3],[3,7,4,0]];const bounds=vs.reduce((a,p)=>({minX:Math.min(a.minX,p.x),minY:Math.min(a.minY,p.y),maxX:Math.max(a.maxX,p.x),maxY:Math.max(a.maxY,p.y)}),{minX:Infinity,minY:Infinity,maxX:-Infinity,maxY:-Infinity});return {vs,bounds,faces:f.map((ids,fi)=>({pts:ids.map(j=>vs[j]),depth:ids.reduce((a,j)=>a+vs[j].depth,0)/4,fi}))}}
+function hitPlacedItem(canvas,x,y){const data=canvas._pickData||[];for(let i=data.length-1;i>=0;i--){const p=data[i];if(x>=p.minX&&x<=p.maxX&&y>=p.minY&&y<=p.maxY)return p.item}return null}
+function drawManualScene(){const canvas=$("#manualCanvas");if(!canvas)return;const dims=getBoardDims(),placed=manualPlaced,box=computePlacedBBox(placed),flat=flattenPlacedItems(placed);const sceneBox={l:Math.max(dims.w,box.l,20),w:Math.max(dims.d,box.w,20),h:Math.max(dims.h,box.h,20)};const m=sceneMetrics(canvas,sceneBox,manualViewerState),ctx=canvas.getContext('2d');ctx.setTransform(m.dpr,0,0,m.dpr,0,0);ctx.clearRect(0,0,m.W,m.H);const floor=sceneCube({x:0,y:0,z:0,l:sceneBox.l,w:sceneBox.w,h:0.01},m);ctx.beginPath();floor.faces[0].pts.forEach((q,j)=>j?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y));ctx.closePath();ctx.fillStyle='rgba(219,234,254,.45)';ctx.fill();ctx.strokeStyle='rgba(96,125,167,.55)';ctx.lineWidth=1;ctx.stroke();const pickData=[];let faces=[];placed.forEach(parent=>{const pick=sceneCube(parent,m);pickData.push({...pick.bounds,item:parent})});flat.forEach((it,idx)=>{const cube=sceneCube(it,m);cube.faces.forEach(f=>faces.push({...f,idx,item:it}))});faces.sort((a,b)=>a.depth-b.depth);const fills=['rgba(96,165,250,.78)','rgba(59,130,246,.74)','rgba(37,99,235,.68)','rgba(125,181,255,.76)'];ctx.lineJoin='round';for(const f of faces){ctx.beginPath();f.pts.forEach((q,j)=>j?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y));ctx.closePath();const selected=f.item.parentId===selectedPlacedId;ctx.fillStyle=selected?'rgba(34,197,94,.84)':fills[(f.fi+f.idx)%fills.length];ctx.fill();ctx.strokeStyle=selected?'rgba(21,128,61,.82)':'rgba(37,78,132,.55)';ctx.lineWidth=selected?1.2:.7;ctx.stroke()}const boxCube=sceneCube({x:0,y:0,z:0,l:sceneBox.l,w:sceneBox.w,h:sceneBox.h},m);ctx.strokeStyle='rgba(71,85,105,.68)';ctx.lineWidth=1.15;boxCube.faces.forEach(f=>{ctx.beginPath();f.pts.forEach((q,j)=>j?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y));ctx.closePath();ctx.stroke()});ctx.fillStyle='#56677c';ctx.font='11px system-ui';ctx.fillText(`工作区 ${fmt(dims.w,1)} × ${fmt(dims.d,1)} × ${fmt(dims.h,1)} cm`,12,20);ctx.fillText(`顶层模型 ${placed.length} · 实际件数 ${flat.length}`,12,36);canvas._pickData=pickData;canvas._sceneMeta=m}
+function initManualCanvas(){const canvas=$("#manualCanvas");if(!canvas||canvas.dataset.bound==='1')return;const st=manualViewerState;const loc=e=>{const r=canvas.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top}};canvas.onpointerdown=e=>{const p=loc(e),hit=hitPlacedItem(canvas,p.x,p.y);st.x=e.clientX;st.y=e.clientY;if(hit){selectedPlacedId=hit.id;st.mode='move';st.dragItemId=hit.id;updateSelectedEditor();drawManualScene()}else{st.mode='rotate'}canvas.setPointerCapture(e.pointerId)};canvas.onpointermove=e=>{if(!st.mode)return;if(st.mode==='rotate'){st.yaw+=(e.clientX-st.x)*.01;st.pitch=Math.max(.12,Math.min(1.28,st.pitch+(e.clientY-st.y)*.008));st.x=e.clientX;st.y=e.clientY;drawManualScene();return}if(st.mode==='move'){const item=manualPlaced.find(x=>x.id===st.dragItemId),m=canvas._sceneMeta;if(!item||!m)return;const dxs=e.clientX-st.x,dys=e.clientY-st.y;const u=dxs/m.scale,v=-dys/(Math.max(.2,m.sp)*m.scale);const dxw=u*m.cy+v*m.sy,dyw=-u*m.sy+v*m.cy;const pos=snapPlacedPosition(item,item.x+dxw,item.y+dyw,item.id);item.x=pos.x;item.y=pos.y;st.x=e.clientX;st.y=e.clientY;updateSelectedEditor();updateManualSummary();drawManualScene()}};canvas.onpointerup=()=>{st.mode=null;st.dragItemId=null};canvas.onpointercancel=()=>{st.mode=null;st.dragItemId=null};canvas.ondblclick=e=>{const p=loc(e),hit=hitPlacedItem(canvas,p.x,p.y);if(hit){selectedPlacedId=hit.id;updateSelectedEditor();rotateSelectedModel()}else{st.yaw=-.68;st.pitch=.58;drawManualScene()}};canvas.ondragover=e=>{e.preventDefault()};canvas.ondrop=e=>{e.preventDefault();const id=e.dataTransfer?.getData('text/plain')||boardDragFromInventoryId;boardDragFromInventoryId=null;if(!id)return;const rect=canvas.getBoundingClientRect();placeInventoryModel(id,e.clientX-rect.left,e.clientY-rect.top,rect)};new ResizeObserver(()=>drawManualScene()).observe(canvas);canvas.dataset.bound='1';drawManualScene()}
+function applyManualLayout(){const layout=document.querySelector('#page-manual .manual-layout');if(!layout)return;const right=n($("#manualRightWidth")?.value,58);layout.style.gridTemplateColumns=`${100-right}% ${right}%`}
+function applyManualCanvasSize(){const h=n($("#manualCanvasHeight")?.value,520);const viewer=$("#manualDropZone"),canvas=$("#manualCanvas");if(viewer)viewer.style.minHeight=`${h+80}px`;if(canvas)canvas.style.height=`${h}px`;drawManualScene()}
+function commitManualToPage1(){if(!manualPlaced.length){toast('请先在 3D 场景中放置模型');return}const box=computePlacedBBox(manualPlaced);[...$('#skuBody').children].forEach(tr=>{if(tr.querySelector('.sku-name')?.value.trim()==='[3D排布结果]')tr.remove()});skuRow({name:'[3D排布结果]',l:fmt(box.l,1),w:fmt(box.w,1),h:fmt(box.h,1),weight:fmt(box.totalWeight,2),qty:1,rotate:false});const info=$('#manualBackInfo');info.classList.remove('hidden');info.innerHTML=`<b>已从 3D 排布返回：</b>组合结果 ${fmt(box.l,1)} × ${fmt(box.w,1)} × ${fmt(box.h,1)} cm，重量 ${fmt(box.totalWeight,2)} kg，已自动写入页面一为 “[3D排布结果]”，你现在可以继续自动推荐纸箱。`;switchPage('auto');$('#calculate').click();window.scrollTo({top:0,behavior:'smooth'});toast('已返回页面一并生成纸箱推荐')}
+function bindPageAndManualActions(){$$('[data-page]').forEach(btn=>btn.onclick=()=>switchPage(btn.dataset.page));$("#syncManualSku").onclick=()=>{syncManualSkuOptions();toast('已同步当前 SKU')};$("#manualSkuSelect").onchange=()=>{renderManualOrientationOptions();manualSchemes=[];renderArrangementSchemes()};$("#singleAdd").onclick=()=>createInventoryModels(true);$("#batchAdd").onclick=()=>createInventoryModels(false);$("#autoPlaceBlock").onclick=autoPlaceBlock;$("#clearInventory").onclick=()=>{manualInventory=[];renderModelLibrary();toast('已清空模型库')};$("#selectedOrient").onchange=applySelectedOrientation;$("#selectedZ").oninput=updateSelectedZ;$("#rotateSelected").onclick=rotateSelectedModel;$("#splitSelected").onclick=splitSelectedBlock;$("#deleteSelected").onclick=deleteSelectedPlaced;$("#returnSelected").onclick=returnSelectedToInventory;$("#generateSchemes").onclick=generateArrangementSchemes;$("#clearSchemes").onclick=()=>{manualSchemes=[];renderArrangementSchemes()};$("#boardW").oninput=()=>{enforceBoardBounds();updateManualSummary();drawManualScene();if(manualSchemes.length)generateArrangementSchemes()};$("#boardD").oninput=()=>{enforceBoardBounds();updateManualSummary();drawManualScene();if(manualSchemes.length)generateArrangementSchemes()};$("#boardH").oninput=()=>{enforceBoardBounds();updateManualSummary();drawManualScene();if(manualSchemes.length)generateArrangementSchemes()};$("#manualRightWidth").oninput=applyManualLayout;$("#manualCanvasHeight").oninput=applyManualCanvasSize;$("#manualZoom").oninput=drawManualScene;$("#manualFullscreen").onclick=()=>$('#manualDropZone')?.requestFullscreen?.();$("#clearPlaced").onclick=()=>{manualPlaced=[];selectedPlacedId=null;updateSelectedEditor();updateManualSummary();drawManualScene();toast('已清空 3D 场景')};$("#completeManual").onclick=commitManualToPage1}
 
 
-function buildFreightWarehouseCatalogFromWorkbook(){
-  const map=new Map();
-  const include=/美国|美西|美东|美中|美森|洛杉矶|纽约|芝加哥|休斯顿|奥克兰|西雅图|萨凡纳|海外仓|空运|空卡|快递/;
-  const exclude=/加拿大|美转加|英国|欧洲/;
-  const re=/\b[A-Z]{3}\d\b/g;
-  Object.entries(SHEETS).forEach(([name,rows])=>{
-    if(!include.test(name) || exclude.test(name)) return;
-    (rows||[]).forEach(row=>{
-      const line=(row||[]).map(x=>txt(x)).join(" ").toUpperCase();
-      const hits=line.match(re)||[];
-      hits.forEach(code=>{
-        if(code==="USD0")return;
-        if(!map.has(code))map.set(code,{code,count:0,sheets:new Set(),zip:"",source:"当前上传货代表"});
-        const d=map.get(code); d.count++; d.sheets.add(name);
-      });
-    });
-  });
-  // Merge uploaded workbook results over reference catalog.
-  map.forEach((d,code)=>{
-    const old=FREIGHT_WAREHOUSE_MAP.get(code);
-    FREIGHT_WAREHOUSE_MAP.set(code,{
-      code,
-      count:d.count,
-      sheets:[...d.sheets].sort(),
-      zip:old?.zip||"",
-      source:"当前上传货代表"
-    });
-  });
-  return map.size;
+function limits(){return{maxGross:n($("#maxGross").value,22.5),tare:n($("#tare").value,1),deduct:n($("#innerDeduct").value,1),round:n($("#roundSize").value,1),cushion:n($("#cushion").value,1),tol:n($("#builtinTolerance").value,.08),maxDims:[n($("#maxLong").value,91.4),n($("#maxSecond").value,63.5),n($("#maxThird").value,63.5)].sort((a,b)=>b-a),divisor:n($("#divisor").value,6000),variantCount:Math.max(3,Math.min(12,Math.floor(n($("#variantCount")?.value,8)))),shapePref:Math.max(0,Math.min(3,Math.floor(n($("#shapePref")?.value,2)))),packMode:$("#packMode")?.value||"single"}}
+function dimsLegal(d,lim){const s=dimsSorted(d);return s.every((v,i)=>v<=lim.maxDims[i]+1e-9)}
+function effectiveUnitCap(s,lim){if(lim.packMode==='single')return s.qty;return Math.floor((lim.maxGross-lim.tare+1e-9)/s.weight)}
+function planWarnings(p,lim){const out=[];if(p.autoSplitFromSingle){out.push(`已优先尝试单箱，但全部 ${p.sku?.qty??0} 件无法同时满足当前单箱重量 / 尺寸上限，因此自动改为 ${p.boxes} 箱。`)}return out}
+function shapeMetrics(box){const d=dimsSorted([box.l,box.w,box.h]);return{dims:d,overall:d[0]/Math.max(d[2],1e-9),face:d[0]/Math.max(d[1],1e-9),flat:d[1]/Math.max(d[2],1e-9)}}
+function shapeLimits(pref=2){if(pref<=0)return{overall:99,face:99,flat:99};if(pref===1)return{overall:1.78,face:1.52,flat:1.58};if(pref===2)return{overall:1.55,face:1.36,flat:1.42};return{overall:1.38,face:1.24,flat:1.30}}
+function isSquareEnough(box,pref=2,relax=0){if(pref<=0)return true;const m=shapeMetrics(box),q=shapeLimits(pref);return m.overall<=q.overall+relax&&m.face<=q.face+relax*.65&&m.flat<=q.flat+relax*.65}
+function shapePenalty(box,pref=2){if(!box||pref<=0)return 0;const m=shapeMetrics(box),q=shapeLimits(pref),k=pref===3?4.2:pref===2?2.8:1.25;const p1=Math.pow(Math.max(0,m.overall-q.overall),2)*1500*k,p2=Math.pow(Math.max(0,m.face-q.face),2)*1050*k,p3=Math.pow(Math.max(0,m.flat-q.flat),2)*900*k;return p1+p2+p3+Math.max(0,m.dims[0]-m.dims[1]-10)*12*k+Math.max(0,m.dims[1]-m.dims[2]-10)*8*k}
+function boxShapeLevel(box){const m=shapeMetrics(box);if(m.overall<=1.32&&m.face<=1.20&&m.flat<=1.25)return{text:"很方正",cls:"shape-good"};if(m.overall<=1.50&&m.face<=1.34&&m.flat<=1.38)return{text:"方正",cls:"shape-good"};if(m.overall<=1.70)return{text:"较方正",cls:"shape-mid"};return{text:"偏长方",cls:"shape-bad"}}
+function scorePlan(p,s,mode,lim){const prodVol=s.qty*s.l*s.w*s.h,volRatio=p.totalVol/Math.max(prodVol,1e-9),shipFill=Math.min(1,prodVol/Math.max(p.totalVol,1e-9)),lowFillPenalty=shipFill<.68?Math.pow(.68-shipFill,2)*85000:0,shape=shapePenalty(p.box,lim?.shapePref??2),mixBonus=p.mixed?-22:0;if(mode==="volume")return volRatio*10000+p.boxes*.05+lowFillPenalty+shape*.22+mixBonus;return volRatio*10000+p.boxes*2+lowFillPenalty+shape*.75+mixBonus}
+function mixedPlacementBBox(items){if(!items?.length)return{x:0,y:0,z:0,l:0,w:0,h:0,vol:0};let minX=Infinity,minY=Infinity,minZ=Infinity,maxX=-Infinity,maxY=-Infinity,maxZ=-Infinity;for(const p of items){minX=Math.min(minX,p.x);minY=Math.min(minY,p.y);minZ=Math.min(minZ,p.z);maxX=Math.max(maxX,p.x+p.l);maxY=Math.max(maxY,p.y+p.w);maxZ=Math.max(maxZ,p.z+p.h)}return{x:minX,y:minY,z:minZ,l:maxX-minX,w:maxY-minY,h:maxZ-minZ,vol:(maxX-minX)*(maxY-minY)*(maxZ-minZ)}}
+function mixedOrientationCounts(items){const m=new Map();for(const p of items||[]){const k=`${p.l}×${p.w}×${p.h}`;if(!m.has(k))m.set(k,{key:k,dims:[p.l,p.w,p.h],count:0});m.get(k).count++}return [...m.values()].sort((a,b)=>b.count-a.count)}
+function orientationSummaryFromCounts(counts,max=3){if(!counts?.length)return'—';const a=counts.slice(0,max).map(x=>`${x.dims.join('×')} ×${x.count}`);if(counts.length>max)a.push(`+${counts.length-max}种`);return a.join('；')}
+function mixedPlacementSignature(items){const counts=mixedOrientationCounts(items).map(x=>`${x.key}:${x.count}`).join(',');const b=mixedPlacementBBox(items);const first=(items||[]).slice(0,16).map(p=>`${Math.round(p.x*10)},${Math.round(p.y*10)},${Math.round(p.z*10)},${p.l},${p.w},${p.h}`).join(';');return `${counts}|${Math.round(b.l*10)}x${Math.round(b.w*10)}x${Math.round(b.h*10)}|${first}`}
+function freeSpaceContained(a,b){return a.x>=b.x-1e-9&&a.y>=b.y-1e-9&&a.z>=b.z-1e-9&&a.x+a.l<=b.x+b.l+1e-9&&a.y+a.w<=b.y+b.w+1e-9&&a.z+a.h<=b.z+b.h+1e-9}
+function pruneFreeSpaces(spaces){let a=spaces.filter(s=>s.l>.05&&s.w>.05&&s.h>.05);a=a.filter((s,i)=>!a.some((t,j)=>i!==j&&freeSpaceContained(s,t)));a.sort((x,y)=>x.z-y.z||(x.l*x.w*x.h)-(y.l*y.w*y.h));return a.slice(0,90)}
+function splitFreeSpace(fs,used,order){const axes={x:{o:'x',d:'l'},y:{o:'y',d:'w'},z:{o:'z',d:'h'}},u={x:used[0],y:used[1],z:used[2]},out=[];for(let i=0;i<order.length;i++){const axis=order[i],ax=axes[axis],size=fs[ax.d],use=Math.min(size,u[axis]);if(size-use<=.05)continue;const r={x:fs.x,y:fs.y,z:fs.z,l:fs.l,w:fs.w,h:fs.h};for(let j=0;j<i;j++){const pa=order[j],pax=axes[pa];r[pax.d]=Math.min(r[pax.d],u[pa])}r[ax.o]+=use;r[ax.d]=size-use;out.push(r)}return out}
+function placementOverlap3D(a,b){return !(a.x+a.l<=b.x+1e-9||b.x+b.l<=a.x+1e-9||a.y+a.w<=b.y+1e-9||b.y+b.w<=a.y+1e-9||a.z+a.h<=b.z+1e-9||b.z+b.h<=a.z+1e-9)}
+function rectOverlapAreaXY(a,b){const ox=Math.max(0,Math.min(a.x+a.l,b.x+b.l)-Math.max(a.x,b.x)),oy=Math.max(0,Math.min(a.y+a.w,b.y+b.w)-Math.max(a.y,b.y));return ox*oy}
+function supportRatioForPlacement(c,placed){if(c.z<=1e-7)return 1;let area=0;for(const p of placed){if(Math.abs((p.z+p.h)-c.z)>.05)continue;area+=rectOverlapAreaXY(c,p)}return Math.min(1,area/Math.max(.0001,c.l*c.w))}
+function fitsMixedPlacement(c,dims,placed,supportMin=.72){if(c.x<-.001||c.y<-.001||c.z<-.001||c.x+c.l>dims[0]+1e-7||c.y+c.w>dims[1]+1e-7||c.z+c.h>dims[2]+1e-7)return false;for(const p of placed)if(placementOverlap3D(c,p))return false;return supportRatioForPlacement(c,placed)>=supportMin-1e-9}
+function extremePointsForPacking(placed,dims,maxPoints=70){const xs=[0],ys=[0],zs=[0],raw=[[0,0,0]];for(const p of placed){xs.push(p.x+p.l);ys.push(p.y+p.w);zs.push(p.z+p.h);raw.push([p.x+p.l,p.y,p.z],[p.x,p.y+p.w,p.z],[p.x,p.y,p.z+p.h],[p.x+p.l,p.y+p.w,p.z],[p.x+p.l,p.y,p.z+p.h],[p.x,p.y+p.w,p.z+p.h])}const uniq=a=>[...new Set(a.map(v=>Math.round(v*1000)/1000))].filter(v=>v>=0).sort((a,b)=>a-b).slice(0,16),X=uniq(xs),Y=uniq(ys),Z=uniq(zs).slice(0,9);for(const z of Z)for(const x of X)for(const y of Y)raw.push([x,y,z]);const seen=new Set(),pts=[];for(const q of raw){const [x,y,z]=q;if(x>dims[0]+1e-7||y>dims[1]+1e-7||z>dims[2]+1e-7)continue;const k=`${Math.round(x*100)}|${Math.round(y*100)}|${Math.round(z*100)}`;if(seen.has(k))continue;seen.add(k);pts.push({x,y,z})}pts.sort((a,b)=>a.z-b.z||a.y-b.y||a.x-b.x);return pts.slice(0,maxPoints)}
+function faceContactScore(c,placed,dims){let s=0;if(c.x<=.05)s+=c.w*c.h;if(c.y<=.05)s+=c.l*c.h;if(c.z<=.05)s+=c.l*c.w;if(Math.abs(c.x+c.l-dims[0])<=.05)s+=c.w*c.h*.6;if(Math.abs(c.y+c.w-dims[1])<=.05)s+=c.l*c.h*.6;if(Math.abs(c.z+c.h-dims[2])<=.05)s+=c.l*c.w*.3;for(const p of placed){if(Math.abs(c.x+c.l-p.x)<=.05||Math.abs(p.x+p.l-c.x)<=.05){const oy=Math.max(0,Math.min(c.y+c.w,p.y+p.w)-Math.max(c.y,p.y)),oz=Math.max(0,Math.min(c.z+c.h,p.z+p.h)-Math.max(c.z,p.z));s+=oy*oz}if(Math.abs(c.y+c.w-p.y)<=.05||Math.abs(p.y+p.w-c.y)<=.05){const ox=Math.max(0,Math.min(c.x+c.l,p.x+p.l)-Math.max(c.x,p.x)),oz=Math.max(0,Math.min(c.z+c.h,p.z+p.h)-Math.max(c.z,p.z));s+=ox*oz}if(Math.abs(c.z+c.h-p.z)<=.05||Math.abs(p.z+p.h-c.z)<=.05)s+=rectOverlapAreaXY(c,p)*.7}return s}
+function placementChoiceScore(c,placed,dims,sku,config,usage){const trial=[...placed,c],b=mixedPlacementBBox(trial),prod=sku.l*sku.w*sku.h,used=trial.length*prod,bvol=Math.max(prod,b.vol),waste=bvol-used,aspect=b.l&&b.w&&b.h?Math.max(b.l,b.w,b.h)/Math.max(.1,Math.min(b.l,b.w,b.h)):99,contact=faceContactScore(c,placed,dims),support=supportRatioForPlacement(c,placed),key=`${c.l}×${c.w}×${c.h}`,same=usage.get(key)||0;switch(config.mode){case 0:return waste*1.2+c.z*4500+c.y*10+c.x-contact*18;case 1:return waste*.85+Math.max(0,aspect-1.6)*prod*.5-contact*24+c.z*1800;case 2:return c.z*9000+c.y*80+c.x*3+waste*.25-contact*16;case 3:return waste-contact*34-same*prod*.015+c.z*2200;case 4:return waste*.7+Math.max(0,aspect-1.35)*prod*1.2-contact*20-support*prod*.08;default:return waste-contact*20+c.z*3000}}
+function mixedChoices(sku,dims,placed,usage,config,limit=10){const base=orientations(sku),rot=config.rot%Math.max(1,base.length),ors=[...base.slice(rot),...base.slice(0,rot)],pts=extremePointsForPacking(placed,dims,config.maxPoints||72),choices=[];for(const pt of pts){for(let oi=0;oi<ors.length;oi++){const d=ors[oi],c={x:pt.x,y:pt.y,z:pt.z,l:d[0],w:d[1],h:d[2]};if(!fitsMixedPlacement(c,dims,placed,config.supportMin))continue;const sc=placementChoiceScore(c,placed,dims,sku,config,usage)+(oi===0?config.firstBonus||0:0);choices.push({c,d,sc})}}return choices.sort((a,b)=>a.sc-b.sc).slice(0,limit)}
+function packMixedLookahead(sku,dims,maxCount,gap,config){const placed=[],usage=new Map();for(let k=0;k<maxCount;k++){const choices=mixedChoices(sku,dims,placed,usage,config,8);if(!choices.length)break;let chosen=choices[0],best=Infinity;for(const ch of choices){const real={x:ch.c.x,y:ch.c.y,z:ch.c.z,l:ch.d[0],w:ch.d[1],h:ch.d[2]},trial=[...placed,real],u2=new Map(usage),key=`${real.l}×${real.w}×${real.h}`;u2.set(key,(u2.get(key)||0)+1);const next=mixedChoices(sku,dims,trial,u2,config,4);const future=next.length?next[0].sc:0,b=mixedPlacementBBox(trial),prod=sku.l*sku.w*sku.h,compact=(trial.length*prod)/Math.max(prod,b.vol),val=ch.sc+future*.28-(compact*prod*.04);if(val<best){best=val;chosen=ch}}const real={x:chosen.c.x,y:chosen.c.y,z:chosen.c.z,l:chosen.d[0],w:chosen.d[1],h:chosen.d[2]};placed.push(real);const key=`${real.l}×${real.w}×${real.h}`;usage.set(key,(usage.get(key)||0)+1)}const b=mixedPlacementBBox(placed),mix=mixedOrientationCounts(placed),prod=sku.l*sku.w*sku.h,used=placed.length*prod,compact=b.vol?used/b.vol:0,shape=b.l&&b.w&&b.h?Math.max(b.l,b.w,b.h)/Math.max(.1,Math.min(b.l,b.w,b.h)):99;return{placements:placed,bbox:b,mix,compact,shape,score:(maxCount-placed.length)*1e9+(1-compact)*1150+Math.max(0,shape-1.8)*30-mix.length*9}}
+function packMixedExtreme(sku,dims,maxCount,gap,config){const base=orientations(sku),rot=config.rot%Math.max(1,base.length),ors=[...base.slice(rot),...base.slice(0,rot)],placed=[],usage=new Map();for(let k=0;k<maxCount;k++){const pts=extremePointsForPacking(placed,dims,config.maxPoints||64);let best=null;for(const pt of pts){for(let oi=0;oi<ors.length;oi++){const d=ors[oi],c={x:pt.x,y:pt.y,z:pt.z,l:d[0],w:d[1],h:d[2]};if(gap>0){c.l+=gap;c.w+=gap;c.h+=gap}if(!fitsMixedPlacement(c,dims,placed,config.supportMin))continue;const sc=placementChoiceScore(c,placed,dims,sku,config,usage)+(oi===0?config.firstBonus||0:0);if(!best||sc<best.sc-1e-9)best={c,d,sc}}}if(!best)break;const real={x:best.c.x,y:best.c.y,z:best.c.z,l:best.d[0],w:best.d[1],h:best.d[2]};placed.push(real);const key=`${real.l}×${real.w}×${real.h}`;usage.set(key,(usage.get(key)||0)+1)}const b=mixedPlacementBBox(placed),mix=mixedOrientationCounts(placed),prod=sku.l*sku.w*sku.h,used=placed.length*prod,compact=b.vol?used/b.vol:0,shape=b.l&&b.w&&b.h?Math.max(b.l,b.w,b.h)/Math.max(.1,Math.min(b.l,b.w,b.h)):99;return{placements:placed,bbox:b,mix,compact,shape,score:(maxCount-placed.length)*1e9+(1-compact)*1200+Math.max(0,shape-2)*35-mix.length*8}}
+function mixedPackVariants(sku,dims,maxCount,gap=0,maxVariants=8){const configs=[],modes=[0,1,2,3,4],ors=orientations(sku);for(let r=0;r<Math.max(1,ors.length);r++){for(const mode of modes){configs.push({mode,rot:r,supportMin:mode===2?.60:mode===4?.68:.72,maxPoints:mode===3?96:78,firstBonus:(r%2?-.01:0),lookahead:mode===1||mode===4})}}const seen=new Set(),out=[];for(const c of configs){for(const solver of [packMixedExtreme,...(c.lookahead?[packMixedLookahead]:[])]){const r=solver(sku,dims,maxCount,gap,c);if(!r.placements.length)continue;const key=mixedPlacementSignature(r.placements);if(seen.has(key))continue;seen.add(key);out.push(r)}}return out.sort((a,b)=>b.placements.length-a.placements.length||b.compact-a.compact||b.mix.length-a.mix.length||a.score-b.score).slice(0,maxVariants)}
+function singleGridCandidatesForBox(s,box,lim){const usable=[box.l-lim.deduct,box.w-lim.deduct,box.h-lim.deduct];if(usable.some(v=>v<=0))return[];const byWeight=effectiveUnitCap(s,lim);if(byWeight<1)return[];if(lim.packMode==='single'&&(s.qty*s.weight+lim.tare>lim.maxGross+1e-9||!dimsLegal([box.l,box.w,box.h],lim)))return[];const out=[];for(const d of orientations(s)){const g=[Math.floor(usable[0]/d[0]),Math.floor(usable[1]/d[1]),Math.floor(usable[2]/d[2])],geo=g[0]*g[1]*g[2];let cap;if(lim.packMode==='single'){if(geo<s.qty)continue;cap=s.qty}else cap=Math.min(geo,byWeight);if(cap<1)continue;const boxVol=box.l*box.w*box.h,fill=Math.min(1,cap*s.l*s.w*s.h/boxVol),boxes=lim.packMode==='single'?1:Math.ceil(s.qty/cap),totalVol=boxes*boxVol,shipFill=(s.qty*s.l*s.w*s.h)/totalVol;const p={source:'builtin',box:{...box},orientation:d,grid:g,cap,boxes,totalVol,fill,shipFill,usable,mixed:false};p.score=scorePlan(p,s,goal,lim);out.push(p)}return out}
+function mixedCandidatesForFixedBox(s,box,lim,source='builtin',maxVariants=4){const usable=[box.l-lim.deduct,box.w-lim.deduct,box.h-lim.deduct];if(usable.some(v=>v<=0))return[];if(lim.packMode==='single'&&(s.qty*s.weight+lim.tare>lim.maxGross+1e-9||!dimsLegal([box.l,box.w,box.h],lim)))return[];const byWeight=effectiveUnitCap(s,lim),searchCap=lim.packMode==='single'?Math.min(s.qty,500):Math.min(s.qty,byWeight,220);if(searchCap<1)return[];const vars=mixedPackVariants(s,usable,searchCap,0,maxVariants),boxVol=box.l*box.w*box.h;return vars.map(v=>{if(lim.packMode==='single'&&v.placements.length<s.qty)return null;const cap=lim.packMode==='single'?s.qty:Math.min(v.placements.length,byWeight);if(cap<1)return null;const placement=v.placements.slice(0,cap),boxes=lim.packMode==='single'?1:Math.ceil(s.qty/cap),totalVol=boxes*boxVol,fill=Math.min(1,cap*s.l*s.w*s.h/boxVol),shipFill=(s.qty*s.l*s.w*s.h)/totalVol,b=mixedPlacementBBox(placement),mix=mixedOrientationCounts(placement),p={source,box:{...box},orientation:mix[0]?.dims||[s.l,s.w,s.h],grid:null,cap,boxes,totalVol,fill,shipFill,usable,mixed:true,mixedPlacement:placement,mix,requiredInner:[b.l+lim.cushion,b.w+lim.cushion,b.h+lim.cushion]};p.score=scorePlan(p,s,goal,lim);return p}).filter(Boolean)}
+function gridCandidatesForBox(s,box,lim){const all=[...singleGridCandidatesForBox(s,box,lim),...mixedCandidatesForFixedBox(s,box,lim,'builtin',4)],seen=new Set();return all.filter(p=>{const k=planKey(p);if(seen.has(k))return false;seen.add(k);return true}).sort((a,b)=>a.score-b.score||b.cap-a.cap)}
+function singleBoxCustomCandidates(s,lim){const q=s.qty,out=[],seen=new Set();if(q*s.weight+lim.tare>lim.maxGross+1e-9)return[];const keep=p=>{const k=planKey(p);if(seen.has(k))return;seen.add(k);out.push(p);if(out.length>220){out.sort((a,b)=>a.score-b.score||b.fill-a.fill);out.length=140}};const maxAxis=Math.min(60,Math.max(1,q));for(const d of orientations(s)){for(let nx=1;nx<=Math.min(maxAxis,q);nx++){const maxNy=Math.min(maxAxis,Math.ceil(q/nx));for(let ny=1;ny<=maxNy;ny++){const nz=Math.ceil(q/(nx*ny));if(nz<1||nz>maxAxis)continue;const slack=nx*ny*nz-q;if(slack>Math.max(8,Math.ceil(q*.22)))continue;const requiredInner=[nx*d[0]+lim.cushion,ny*d[1]+lim.cushion,nz*d[2]+lim.cushion],purchase=requiredInner.map(x=>ceilStep(x+lim.deduct,lim.round));if(!dimsLegal(purchase,lim))continue;const box={name:'单箱建议',l:purchase[0],w:purchase[1],h:purchase[2],builtin:false},boxVol=box.l*box.w*box.h,totalVol=boxVol,fill=(q*s.l*s.w*s.h)/boxVol,p={source:'custom',box,orientation:d,grid:[nx,ny,nz],cap:q,boxes:1,totalVol,fill,shipFill:fill,requiredInner,usable:requiredInner,mixed:false};p.score=scorePlan(p,s,goal,lim)+slack*4;keep(p)}}}return out.sort((a,b)=>a.score-b.score||shapePenalty(a.box,lim.shapePref)-shapePenalty(b.box,lim.shapePref)||b.fill-a.fill).slice(0,110)}
+function customGridBaseCandidates(s,lim){if(lim.packMode==='single')return singleBoxCustomCandidates(s,lim);const byWeight=Math.floor((lim.maxGross-lim.tare+1e-9)/s.weight);if(byWeight<1)return[];const maxUnits=Math.min(s.qty,byWeight,180),out=[],keep=p=>{out.push(p);if(out.length>160){out.sort((a,b)=>a.score-b.score||b.cap-a.cap);out.length=90}};for(const d of orientations(s)){const maxX=Math.min(20,Math.max(1,Math.floor((lim.maxDims[0]-lim.cushion)/Math.max(d[0],.001))));for(let nx=1;nx<=maxX;nx++){const maxY=Math.min(20,Math.max(1,Math.floor((lim.maxDims[1]-lim.cushion)/Math.max(d[1],.001))));for(let ny=1;ny<=maxY;ny++){const xy=nx*ny;if(xy>maxUnits)break;const maxZ=Math.min(18,Math.floor(maxUnits/xy));for(let nz=1;nz<=Math.max(1,maxZ);nz++){const cap=nx*ny*nz;if(cap>maxUnits)break;const requiredInner=[nx*d[0]+lim.cushion,ny*d[1]+lim.cushion,nz*d[2]+lim.cushion],purchase=requiredInner.map(x=>ceilStep(x+lim.deduct,lim.round));if(!dimsLegal(purchase,lim))continue;const boxVol=purchase[0]*purchase[1]*purchase[2],boxes=Math.ceil(s.qty/cap),totalVol=boxes*boxVol,fill=cap*s.l*s.w*s.h/boxVol,shipFill=(s.qty*s.l*s.w*s.h)/totalVol,box={name:'建议采购',l:purchase[0],w:purchase[1],h:purchase[2],builtin:false},p={source:'custom',box,orientation:d,grid:[nx,ny,nz],cap,boxes,totalVol,fill,shipFill,requiredInner,usable:requiredInner,mixed:false};p.score=scorePlan(p,s,goal,lim);keep(p)}}}}return out.sort((a,b)=>a.score-b.score||b.cap-a.cap).slice(0,70)}
+function squareCandidateBoxes(s,lim,base){if(lim.shapePref<=0)return[];const minOuter=dimsSorted([s.l+lim.cushion+lim.deduct,s.w+lim.cushion+lim.deduct,s.h+lim.cushion+lim.deduct]),vols=[],seenV=new Set();for(const p of base.slice(0,28)){const v=p.box.l*p.box.w*p.box.h,key=Math.round(v/250)*250;if(seenV.has(key))continue;seenV.add(key);vols.push(v);if(vols.length>=10)break}const templates=lim.shapePref>=3?[[1.08,1,.93],[1.15,1,.88],[1,1,1]]:[[1.16,1,.87],[1.10,1,.92],[1.24,1,.82],[1,1,1]],seen=new Set(),boxes=[];for(const V0 of vols){for(const grow of [1.00,1.035,1.07]){const V=V0*grow,c=Math.cbrt(V);for(const t of templates){let ds=[c*t[0],c*t[1],c*t[2]].sort((a,b)=>b-a);ds=ds.map((v,i)=>ceilStep(Math.max(v,minOuter[i]),lim.round));if(lim.packMode!=='single'&&!dimsLegal(ds,lim))continue;const b={name:'方正建议箱',l:ds[0],w:ds[1],h:ds[2],builtin:false,squareGenerated:true},k=boxKey(b);if(seen.has(k))continue;seen.add(k);boxes.push(b)}}}return boxes.sort((a,b)=>shapePenalty(a,lim.shapePref)-shapePenalty(b,lim.shapePref)||(a.l*a.w*a.h)-(b.l*b.w*b.h)).slice(0,12)}
+function squareCustomCandidates(s,lim,base){const out=[];for(const box of squareCandidateBoxes(s,lim,base)){const single=singleGridCandidatesForBox(s,box,lim).map(p=>({...p,source:'custom',box:{...box}}));for(const p of single){p.source='custom';p.box={...box};p.requiredInner=[box.l-lim.deduct,box.w-lim.deduct,box.h-lim.deduct];p.score=scorePlan(p,s,goal,lim);out.push(p)}for(const m of mixedCandidatesForFixedBox(s,box,lim,'custom',3)){m.box={...box};m.source='custom';m.requiredInner=[box.l-lim.deduct,box.w-lim.deduct,box.h-lim.deduct];m.score=scorePlan(m,s,goal,lim);out.push(m)}}return out}
+function customCandidates(s,lim){const base=customGridBaseCandidates(s,lim),out=[...base],uniqueBoxes=[],seenBox=new Set();for(const p of base){const k=boxKey(p.box);if(seenBox.has(k))continue;seenBox.add(k);uniqueBoxes.push(p.box);if(uniqueBoxes.length>=22)break}for(const box of uniqueBoxes){for(const m of mixedCandidatesForFixedBox(s,box,lim,'custom',3)){m.box={...box,name:'建议采购',builtin:false};m.source='custom';m.score=scorePlan(m,s,goal,lim);out.push(m)}}out.push(...squareCustomCandidates(s,lim,base));const seen=new Set();return out.filter(p=>{const k=planKey(p);if(seen.has(k))return false;seen.add(k);return true}).sort((a,b)=>a.score-b.score||b.cap-a.cap).slice(0,150)}
+function candidateShipFill(p,s){return Number.isFinite(p.shipFill)?p.shipFill:(s.qty*s.l*s.w*s.h)/Math.max(p.totalVol,1e-9)}
+function rankEfficientCandidates(candidates,s,lim){if(!candidates.length)return[];const minVol=Math.min(...candidates.map(p=>p.totalVol)),bestFill=Math.max(...candidates.map(p=>candidateShipFill(p,s))),pref=lim.shapePref||0,volSlack=pref===3?.16:pref===2?.10:pref===1?.05:.015,fillDrop=pref===3?.10:pref===2?.07:pref===1?.04:.015,minFill=Math.max(pref>=2?.62:.68,bestFill-fillDrop);let efficient=candidates.filter(p=>p.totalVol<=minVol*(1+volSlack+1e-9)&&candidateShipFill(p,s)>=minFill-1e-9);if(!efficient.length)efficient=[...candidates];if(pref>0){let square=efficient.filter(p=>isSquareEnough(p.box,pref,0));if(!square.length)square=efficient.filter(p=>isSquareEnough(p.box,pref,.12));if(!square.length&&pref>=2)square=efficient.filter(p=>isSquareEnough(p.box,1,.08));if(square.length)efficient=square}efficient.sort((a,b)=>{const af=candidateShipFill(a,s),bf=candidateShipFill(b,s),shapeA=shapePenalty(a.box,pref),shapeB=shapePenalty(b.box,pref),effA=(a.totalVol/minVol-1)*6500+(bestFill-af)*7000,effB=(b.totalVol/minVol-1)*6500+(bestFill-bf)*7000,mixA=a.mixed?-8:0,mixB=b.mixed?-8:0,builtinA=a.source==='builtin'?-3:0,builtinB=b.source==='builtin'?-3:0;return(shapeA+effA+mixA+builtinA)-(shapeB+effB+mixB+builtinB)||b.cap-a.cap});const rest=candidates.filter(p=>!efficient.includes(p)).sort((a,b)=>shapePenalty(a.box,pref)-shapePenalty(b.box,pref)||a.totalVol-b.totalVol||b.fill-a.fill);return[...efficient,...rest]}
+function efficientVariantPool(candidates,s,best,lim){const bestVol=best.totalVol,bestFill=candidateShipFill(best,s),pref=lim.shapePref||0,maxVol=bestVol*(pref===3?1.18:pref===2?1.13:1.09),minFill=Math.max(.58,bestFill-(pref===3?.14:pref===2?.11:.09));let pool=candidates.filter(p=>p.totalVol<=maxVol+1e-9&&candidateShipFill(p,s)>=minFill-1e-9);if(pref>0){const sq=pool.filter(p=>isSquareEnough(p.box,pref,.12));if(sq.length>=Math.min(3,lim.variantCount||8))pool=sq}return pool}
+function arrangementOrientationKey(p){return p.mixed?mixedOrientationCounts(p.mixedPlacement).map(x=>x.key).sort().join('|'):(p.orientation||[]).join('×')}
+function arrangementPatternKey(p){return p.mixed?mixedPlacementSignature(p.mixedPlacement):(p.grid||[]).join('×')}
+function pickVariantPlans(best,candidates,maxCount=8){const ordered=[],used=new Set(),push=p=>{if(!p)return false;const k=planKey(p);if(used.has(k))return false;used.add(k);ordered.push(p);return true};push(best);const mixed=candidates.filter(p=>p.mixed&&mixedOrientationCounts(p.mixedPlacement).length>1);for(const p of mixed){if(ordered.length>=Math.min(maxCount,4))break;push(p)}const orientSeen=new Set(ordered.map(arrangementOrientationKey)),patternSeen=new Set(ordered.map(arrangementPatternKey));for(const p of candidates){if(ordered.length>=maxCount)break;const k=arrangementOrientationKey(p);if(orientSeen.has(k))continue;if(push(p))orientSeen.add(k)}for(const p of candidates){if(ordered.length>=maxCount)break;const k=arrangementPatternKey(p);if(patternSeen.has(k))continue;if(push(p))patternSeen.add(k)}for(const p of candidates){if(ordered.length>=maxCount)break;push(p)}return ordered.slice(0,maxCount)}
+function buildPlacements(s,p,count){if(p.mixed&&p.mixedPlacement)return p.mixedPlacement.slice(0,count).map((x,i)=>({...x,sku:s.name,index:i}));const [nx,ny,nz]=p.grid,[dx,dy,dz]=p.orientation,res=[];let k=0;for(let z=0;z<nz&&k<count;z++)for(let y=0;y<ny&&k<count;y++)for(let x=0;x<nx&&k<count;x++)res.push({x:x*dx,y:y*dy,z:z*dz,l:dx,w:dy,h:dz,sku:s.name,index:k++});return res}
+function executionMetrics(p){const items=p.mixedPlacement||[],counts=p.mixed?mixedOrientationCounts(items):[{count:p.cap,dims:p.orientation}],kinds=Math.max(1,counts.length),layers=p.mixed?new Set(items.map(x=>Math.round(x.z*10)/10)).size:Math.max(1,p.grid?.[2]||1),minor=counts.filter(x=>x.count<=Math.max(1,Math.ceil((p.cap||1)*.08))).length;let score=100-(kinds-1)*8-Math.max(0,layers-4)*3-minor*2;if(kinds>=5)score-=6;if((p.fullBoxFill??p.fill)<.68)score-=5;score=Math.max(35,Math.min(100,Math.round(score)));return{score,kinds,layers,label:score>=85?'易执行':score>=70?'中等':'较复杂',cls:score>=85?'exec-good':score>=70?'exec-mid':'exec-hard'}}
+function bestTailPlan(s,p,lim){const last=s.qty%(p.cap||1);if(!last||p.boxes<=1)return null;const tailSku={...s,qty:last},tailLim={...lim,packMode:'single',variantCount:3},built=allBoxes().filter(b=>dimsLegal([b.l,b.w,b.h],tailLim)).flatMap(b=>gridCandidatesForBox(tailSku,b,tailLim)),custom=customCandidates(tailSku,tailLim),raw=[...built,...custom];if(!raw.length)return null;const ranked=rankEfficientCandidates(raw,tailSku,tailLim),best=ranked[0],sameVol=p.box.l*p.box.w*p.box.h,bestVol=best.box.l*best.box.w*best.box.h;if(bestVol>=sameVol*.96)return null;return{...best,placement:buildPlacements(tailSku,best,last),gross:last*s.weight+lim.tare,volWeight:bestVol/lim.divisor,saveVol:sameVol-bestVol}}
+function planExplanation(p){const ex=executionMetrics(p),shape=boxShapeLevel(p.box),parts=[`满箱利用率 ${fmt((p.fullBoxFill??p.fill)*100,1)}%`,`箱型${shape.text}`,`${ex.kinds} 种朝向`,`装箱${ex.label}`];if(p.tailPlan)parts.push(`尾箱改用 ${p.tailPlan.box.l}×${p.tailPlan.box.w}×${p.tailPlan.box.h} cm`);if(p.mixed&&ex.kinds>1)parts.push('已使用横竖/侧放混排补空');return`推荐依据：${parts.join('；')}。`}
+function finalizePlan(s,p,variantIndex,lim){const fullCount=Math.min(p.cap,s.qty),lastCount=s.qty%p.cap||Math.min(p.cap,s.qty),fullGross=fullCount*s.weight+lim.tare,lastGross=lastCount*s.weight+lim.tare,boxVol=p.box.l*p.box.w*p.box.h;let totalVol=p.boxes*boxVol;const base={...p,sku:s,variantIndex,fullCount,lastCount,fullGross,lastGross,volWeight:boxVol/lim.divisor,fullBoxFill:p.fill,placement:buildPlacements(s,p,fullCount),lastPlacement:buildPlacements(s,p,lastCount)};const tail=bestTailPlan(s,base,lim);if(tail){base.tailPlan=tail;base.lastPlacement=tail.placement;totalVol=(p.boxes-1)*boxVol+tail.box.l*tail.box.w*tail.box.h}base.totalVol=totalVol;base.avgFill=(s.qty*s.l*s.w*s.h)/Math.max(1,totalVol);base.shipFill=base.avgFill;base.exec=executionMetrics(base);base.explanation=planExplanation(base);return base}
+function choosePlanGroup(s,lim){
+  const build=(modeLim)=>{const built=allBoxes().filter(b=>dimsLegal([b.l,b.w,b.h],modeLim)).flatMap(b=>gridCandidatesForBox(s,b,modeLim)),customs=customCandidates(s,modeLim);return [...built,...customs]};
+  let activeLim=lim,raw=[] ,autoSplit=false;
+  if(lim.packMode==='single'){
+    raw=build({...lim,packMode:'single'});
+    if(!raw.length){activeLim={...lim,packMode:'limit'};raw=build(activeLim);autoSplit=true}
+  }else raw=build(lim);
+  if(!raw.length)return{sku:s,error:'没有满足当前单箱重量或尺寸上限的方案'};
+  const ranked=rankEfficientCandidates(raw,s,activeLim),best=ranked[0],variantPool=efficientVariantPool(ranked,s,best,activeLim),variants=pickVariantPlans(best,variantPool,activeLim.variantCount||8).map((p,idx)=>{const f=finalizePlan(s,p,idx,activeLim);if(autoSplit)f.autoSplitFromSingle=true;return f});
+  return{sku:s,best:variants[0],variants,autoSplitFromSingle:autoSplit}
 }
-function freightWarehouseStats(){
-  const union=warehouseUnion();
-  const freight=union.filter(x=>x.freightSupported);
-  const withZip=freight.filter(x=>x.zip);
-  return {total:freight.length,withZip:withZip.length,needZip:freight.length-withZip.length};
-}
+function validate(skus,lim){if(!skus.length)return'请至少填写一个有效 SKU。';const set=new Set();for(const s of skus){if(set.has(s.name))return`SKU 名称“${s.name}”重复。`;set.add(s.name);if(s.weight+lim.tare>lim.maxGross+1e-9)return`${s.name}：单件重量 + 纸箱预留重量已经超过单箱上限，无法通过分箱解决。`}return''}
+function packingText(p){if(p.mixed){const kinds=mixedOrientationCounts(p.mixedPlacement).length;return`${kinds>1?'多方向混排':'自由坐标排布'} · ${p.cap} 件/箱 · ${kinds} 种朝向`}return`${p.grid[0]} × ${p.grid[1]} × ${p.grid[2]} = ${p.cap} 件/箱`}
+function orientationText(p){if(p.mixed)return orientationSummaryFromCounts(mixedOrientationCounts(p.mixedPlacement),6);return`${p.orientation[0]}×${p.orientation[1]}×${p.orientation[2]} cm`}
+function sourceTag(p){const tags=[p.source==='builtin'?'<span class="tag builtin">内置箱规</span>':'<span class="tag custom">建议新购</span>'];if(p.autoSplitFromSingle)tags.push('<span class="tag warn">单箱超限 → 自动分箱</span>');if(p.mixed){const kinds=mixedOrientationCounts(p.mixedPlacement).length;tags.push(`<span class="tag ok">${kinds>1?'多方向混排':'自由排布'}</span>`)}if(p.manual)tags.push('<span class="tag manual">手动排列</span>');return tags.join(' ')}
 
-function buildOriginList(){
-  const set=new Set(["重庆","华南","上海","宁波","武汉","长沙","成都","厦门","泉州","福州","西安","济南","天津"]);
-  Object.values(SHEETS).slice(0,80).forEach(rows=>{
-    rows.slice(0,12).forEach(row=>row.forEach(v=>{
-      const s=txt(v); if(s && s.length<18 && /重庆|华南|华东|上海|宁波|成都|武汉|长沙|厦门|泉州|福州|西安|济南|天津|南昌|石家庄|青岛|郑州/.test(s)) set.add(s);
-    }));
-  });
-  $("origins").innerHTML=[...set].map(x=>`<option value="${esc(x)}"></option>`).join("");
-}
-function rowText(row){return (row||[]).filter(v=>txt(v)!=="").join(" | ")}
-function dayRange(s){
-  s=txt(s); let m=s.match(/(\d+)\s*[-~至]\s*(\d+)\s*(?:个?工作)?日/); if(m)return [+m[1],+m[2]];
-  m=s.match(/(\d+)\s*(?:个?工作)?日/); if(m)return [+m[1],+m[1]]; return null;
-}
-function cnNum(s){
-  const m={"一":1,"二":2,"三":3,"四":4,"五":5,"六":6,"七":7,"八":8,"九":9,"十":10};
-  s=txt(s); if(m[s]!=null)return m[s];
-  if(/^十[一二三四五六七八九]$/.test(s))return 10+m[s[1]];
-  if(/^[一二三四五六七八九]十$/.test(s))return m[s[0]]*10;
-  if(/^[一二三四五六七八九]十[一二三四五六七八九]$/.test(s))return m[s[0]]*10+m[s[2]];
-  return null;
-}
-function titleDayRange(s){
-  const direct=dayRange(s); if(direct)return direct;
-  const m=txt(s).match(/([一二三四五六七八九十]+)日(?:提|达)/);
-  if(m){const v=cnNum(m[1]); if(v!=null)return [v,v]}
-  return null;
-}
-function effectiveMaxDays(x){
-  if(!x?.days)return null;
-  return x.days[1]+(x.riskDelay?x.riskDelay[1]:0);
-}
+function renderResults(){const groups=plans.filter(p=>!p.error&&p.best);if(!groups.length){$("#results").innerHTML=`<div class="empty">没有可行方案，请检查重量或尺寸限制。</div>`;return}const bests=groups.map(g=>g.best),totalSku=groups.length,totalQty=bests.reduce((a,p)=>a+p.sku.qty,0),totalBoxes=bests.reduce((a,p)=>a+p.boxes,0),totalVol=bests.reduce((a,p)=>a+p.totalVol,0)/1e6,customCount=bests.filter(p=>p.source==="custom").length;let html=`<div class="result-head"><div><h2>批量装箱结果</h2><div class="sub">${limits().packMode==='single'?'当前为“单箱优先”：先尝试一箱装完，但单箱重量与尺寸上限仍是硬限制。':'当前为“按限制自动分箱”：重量与渠道尺寸会作为硬限制。'} 同时继续使用多方向旋转、横竖混排、边角补位和方正箱型筛选。</div></div><div class="toolbar"><button class="btn small" id="exportResults">导出结果 CSV</button><button class="btn small" id="copyAll">复制采购箱清单</button></div></div><div class="summary-kpis"><div class="kpi"><span>SKU</span><b>${totalSku}</b><small>个</small></div><div class="kpi"><span>产品数量</span><b>${totalQty}</b><small>件</small></div><div class="kpi"><span>预计外箱</span><b>${totalBoxes}</b><small>箱</small></div><div class="kpi"><span>整票外箱体积</span><b>${fmt(totalVol,3)}</b><small>m³</small></div><div class="kpi"><span>建议新购箱规</span><b>${customCount}</b><small>个 SKU</small></div></div>`;html+=`<div class="card result-table"><div class="table-wrap"><table><thead><tr><th>SKU</th><th>最优推荐箱型</th><th>来源</th><th>最佳装法</th><th>每箱</th><th>箱数</th><th>满箱毛重</th><th>尾箱</th><th>满箱 / 整批利用率</th><th>可选方案</th></tr></thead><tbody>`+groups.map((g,i)=>{const p=g.best;return `<tr data-group="${i}"><td><b>${esc(p.sku.name)}</b><br><span class="muted">${p.sku.l}×${p.sku.w}×${p.sku.h}</span></td><td class="recbox">${p.box.l}×${p.box.w}×${p.box.h} cm</td><td>${sourceTag(p)}</td><td>${packingText(p)}<br><span class="muted">${p.mixed&&mixedOrientationCounts(p.mixedPlacement).length>1?'朝向组合 ':'朝向 '}${orientationText(p)}</span></td><td><b>${p.cap}</b> 件</td><td><b>${p.boxes}</b> 箱</td><td>${fmt(p.fullGross,2)} kg</td><td>${p.lastCount} 件 / ${fmt(p.lastGross,2)} kg</td><td class="${p.avgFill>=.75?"good":p.avgFill<.55?"warntext":""}">${fmt((p.fullBoxFill??p.fill)*100,1)}% / ${fmt(p.avgFill*100,1)}%</td><td><b>${g.variants.length}</b> 个</td></tr>`}).join("")+`</tbody></table></div></div>`;groups.forEach((g,i)=>{html+=renderGroupSection(g,i)});$("#results").innerHTML=html;bindResultActions(groups);groups.forEach((g,i)=>g.variants.forEach((p,j)=>initViewer(p,`${i}-${j}`)));$("#results").scrollIntoView({behavior:"smooth",block:"start"})}
+function renderGroupSection(group,i){return `<div id="group-${i}" class="card" style="margin-top:16px"><div class="card-head"><div><h2>${esc(group.sku.name)} · 多方向组合装箱方案</h2><div class="sub">共 ${group.variants.length} 个候选；同一箱内会尝试横放、竖放、侧放、边角补位和不同层切换方向，方案 1 为综合推荐</div></div><span class="pill">${group.sku.qty} 件</span></div>${group.variants.map((p,j)=>renderPlanCard(p,i,j)).join("")}</div>`}
+function renderManualBuilder(group,i){const orientOpts=orientations(group.sku).map(d=>`<option value="${d.join("x")}" ${d.join("x")===group.best.orientation.join("x")?"selected":""}>${d.join(" × ")} cm</option>`).join("");const boxOpts=allBoxes().map(b=>`<option value="${b.id}" ${group.best.source==="builtin"&&boxKey(b)===boxKey(group.best.box)?"selected":""}>${b.l}×${b.w}×${b.h}${b.builtin?"":" · 自定义"}</option>`).join("");return `<div class="manual-builder"><h3>自己调整排列方式</h3><div class="sub">你可以手动指定产品朝向与 X / Y / Z 排列数量，系统会按你的组合重新生成一个新方案。这样更适合处理你想要的“不要太长方形”、“按经验摆放”的情况。</div><div class="manual-grid"><div class="field"><label>产品放置朝向</label><select id="manual-orient-${i}">${orientOpts}</select></div><div class="field"><label>X 排列 <span>沿箱长</span></label><input id="manual-x-${i}" type="number" min="1" step="1" value="${group.best.grid?.[0]||1}"></div><div class="field"><label>Y 排列 <span>沿箱宽</span></label><input id="manual-y-${i}" type="number" min="1" step="1" value="${group.best.grid?.[1]||1}"></div><div class="field"><label>Z 层数 <span>沿箱高</span></label><input id="manual-z-${i}" type="number" min="1" step="1" value="${group.best.grid?.[2]||1}"></div><div class="field"><label>箱型来源</label><select id="manual-source-${i}"><option value="auto">自动反推新采购箱</option><option value="builtin">指定现有箱规</option></select></div><div class="field manual-box-wrap hidden" id="manual-boxwrap-${i}"><label>指定纸箱</label><select id="manual-box-${i}">${boxOpts}</select></div></div><div class="toolbar"><button class="btn small primary" data-build-manual="${i}">生成这个排列方案</button></div><div class="manual-note">说明：X×Y×Z 就是你希望一箱里怎么排。比如 3×2×2 表示每层 3×2，共 2 层。系统会校验尺寸与重量是否可行，并把你的手动方案插入到最前面。</div></div>`}
+function manualPanelHtml(p,groupIndex,variantIndex){return `<div class="plan-tip">想自己决定怎么摆放？可使用本 SKU 顶部的“自己调整排列方式”模块，指定产品朝向和 X / Y / Z 排列，再生成新的对比方案。</div>`}
+function renderPlanCard(p,groupIndex,variantIndex){const isBuiltin=p.source==="builtin",shape=boxShapeLevel(p.box),ex=p.exec||executionMetrics(p),buyNote=isBuiltin?`直接优先用现有箱规：${p.box.l}×${p.box.w}×${p.box.h} cm。按当前“内径扣减”设置，算法可用空间约为 ${(p.box.l-n($("#innerDeduct").value)).toFixed(1)}×${(p.box.w-n($("#innerDeduct").value)).toFixed(1)}×${(p.box.h-n($("#innerDeduct").value)).toFixed(1)} cm。`:`建议向纸箱厂询价：${p.box.l}×${p.box.w}×${p.box.h} cm；最低需要的内部空间约 ${p.requiredInner.map(x=>fmt(x,1)).join("×")} cm。下单时要让纸箱厂确认你报的是内径还是外径。`,tail=p.tailPlan;return `<div class="plan-card ${groupIndex===0&&variantIndex===0?"active":""}" id="plan-${groupIndex}-${variantIndex}"><div class="plan-head"><div>${sourceTag(p)} <span class="shape-badge ${shape.cls}" style="margin-left:6px">${shape.text}</span><div class="plan-title" style="margin-top:6px">${esc(p.sku.name)} → ${p.box.l}×${p.box.w}×${p.box.h} cm</div><div class="plan-meta">产品 ${p.sku.l}×${p.sku.w}×${p.sku.h} cm · ${p.sku.weight} kg · 共 ${p.sku.qty} 件</div></div><span class="pill">方案 ${variantIndex+1}</span></div><div class="plan-main"><div class="metrics"><div class="recommend-line"><small>主要纸箱</small><div class="big">${p.box.l} × ${p.box.w} × ${p.box.h} cm</div><small>${isBuiltin?"命中你的内置箱规":"现有箱规不够理想，系统反推的新采购尺寸"}</small></div><div class="plan-explain"><b>为什么推荐：</b>${esc(p.explanation||planExplanation(p))}</div><div class="metric"><span>${p.mixed?"朝向组合":"产品放置朝向"}</span><b>${orientationText(p)}</b></div><div class="metric"><span>排布</span><b>${packingText(p)}</b></div><div class="metric"><span>箱型</span><b>${shape.text}</b></div><div class="metric"><span>可执行性</span><b class="${ex.cls}">${ex.score}/100 · ${ex.label}</b></div><div class="metric"><span>朝向 / 层数</span><b>${ex.kinds} 种 / ${ex.layers} 层</b></div><div class="metric"><span>本次需要</span><b>${p.boxes} 箱 · ${p.sku.qty} 件</b></div><div class="metric"><span>满箱重量</span><b>${fmt(p.fullGross,2)} kg（含预留箱重）</b></div><div class="metric"><span>最后一箱</span><b>${p.lastCount} 件 · ${fmt(p.lastGross,2)} kg</b></div><div class="metric"><span>满箱空间利用率</span><b>${fmt((p.fullBoxFill??p.fill)*100,1)}%</b></div><div class="metric"><span>整批平均利用率</span><b>${fmt(p.avgFill*100,1)}%</b></div>${tail?`<div class="tail-note"><b>尾箱单独优化：</b>${tail.box.l}×${tail.box.w}×${tail.box.h} cm，尾箱 ${p.lastCount} 件；相比继续使用主箱减少约 ${fmt(tail.saveVol/1000,1)} L 空箱体积。</div>`:''}${planWarnings(p,limits()).length?`<div class="limit-warning"><b>装箱上限提醒：</b><br>${planWarnings(p,limits()).map(x=>esc(x)).join('<br>')}</div>`:''}<div class="copyline"><div class="copybox" id="copy-${groupIndex}-${variantIndex}">${esc(buyNote)}</div><button class="btn small" data-copy="${groupIndex}-${variantIndex}">复制采购说明</button></div></div><div class="viewer"><div class="viewer-top"><b>3D 装箱展示</b><select data-viewsel="${groupIndex}-${variantIndex}"><option value="full">典型满箱 · ${p.fullCount} 件</option><option value="last">最后一箱 · ${p.lastCount} 件${tail?' · 尾箱已换小箱':''}</option></select></div><canvas id="canvas-${groupIndex}-${variantIndex}" width="620" height="330"></canvas><div class="viewer-note">按住鼠标拖动旋转 · 双击恢复默认视角 · 不同色块 = 不同放置朝向</div><div class="legend"><span><i style="background:#60a5fa"></i>不同朝向</span><span><i style="background:#cbd5e1"></i>纸箱边界</span></div></div></div></div>`}
+function bindResultActions(groups){$$('[data-group]').forEach((tr,i)=>tr.onclick=()=>{$(`#group-${i}`).scrollIntoView({behavior:"smooth",block:"start"});$$('.plan-card').forEach(x=>x.classList.remove('active'));$(`#plan-${i}-0`)?.classList.add('active')});$$('[data-copy]').forEach(btn=>btn.onclick=()=>{const t=$(`#copy-${btn.dataset.copy}`).textContent;navigator.clipboard?.writeText(t);toast("采购说明已复制")});$("#exportResults").onclick=()=>downloadCSV(resultCsv(groups),"装箱方案.csv");$("#copyAll").onclick=()=>{const text=groups.map(g=>`${g.sku.name}：${g.best.box.l}×${g.best.box.w}×${g.best.box.h} cm，${g.best.cap}件/箱，共${g.best.boxes}箱；可选方案 ${g.variants.length} 个`).join("\n");navigator.clipboard?.writeText(text);toast("采购箱清单已复制")}}
+function buildManualVariant(groupIndex){const group=plans[groupIndex];if(!group||group.error)return;const sku=group.sku,lim=limits();const orientStr=$("#manual-orient-"+groupIndex)?.value||"";const d=orientStr.split("x").map(Number);const nx=Math.max(1,Math.floor(n($("#manual-x-"+groupIndex)?.value,1))),ny=Math.max(1,Math.floor(n($("#manual-y-"+groupIndex)?.value,1))),nz=Math.max(1,Math.floor(n($("#manual-z-"+groupIndex)?.value,1)));const cap=nx*ny*nz;const byWeight=Math.floor((lim.maxGross-lim.tare+1e-9)/sku.weight);if(cap>byWeight){toast(`当前手动排法 ${cap} 件/箱，已超过重量上限，最多约 ${byWeight} 件/箱`);return}const source=$("#manual-source-"+groupIndex)?.value||"auto";let base;if(source==="builtin"){const bid=$("#manual-box-"+groupIndex)?.value;const box=allBoxes().find(b=>b.id===bid);if(!box){toast("请先选择一个现有箱规");return}const usable=[box.l-lim.deduct,box.w-lim.deduct,box.h-lim.deduct];const need=[nx*d[0],ny*d[1],nz*d[2]];if(need.some((v,i)=>v>usable[i]+1e-9)){toast(`指定箱规 ${box.l}×${box.w}×${box.h} cm 放不下当前排列，请换箱或调整排法`);return}const boxVol=box.l*box.w*box.h,boxes=Math.ceil(sku.qty/cap),totalVol=boxes*boxVol,fill=(cap*sku.l*sku.w*sku.h)/boxVol;base={source:"builtin",box:{...box},orientation:d,grid:[nx,ny,nz],cap,boxes,totalVol,fill,requiredInner:need.map(v=>v+lim.cushion),usable,manual:true}}else{const requiredInner=[nx*d[0]+lim.cushion,ny*d[1]+lim.cushion,nz*d[2]+lim.cushion];const purchase=requiredInner.map(x=>ceilStep(x+lim.deduct,lim.round));if(!dimsLegal(purchase,lim)){toast(`该排法需要约 ${purchase.join("×")} cm 的外箱，超过尺寸上限`);return}const box={name:"手动试算",l:purchase[0],w:purchase[1],h:purchase[2],builtin:false};const boxVol=box.l*box.w*box.h,boxes=Math.ceil(sku.qty/cap),totalVol=boxes*boxVol,fill=(cap*sku.l*sku.w*sku.h)/boxVol;base={source:"custom",box,orientation:d,grid:[nx,ny,nz],cap,boxes,totalVol,fill,requiredInner,usable:requiredInner,manual:true}}base.score=scorePlan(base,sku,goal,lim)-0.001;const variant=finalizePlan(sku,base,0,lim);variant.manual=true;const dedup=[variant,...group.variants.filter(v=>planKey(v)!==planKey(variant))].slice(0,lim.variantCount||8);group.variants=dedup;group.best=variant;renderResults();setTimeout(()=>{$(`#group-${groupIndex}`)?.scrollIntoView({behavior:"smooth",block:"start"})},60);toast("已生成手动排列方案")}
+function bindManualEditors(groups){groups.forEach((g,i)=>{const sourceSel=$("#manual-source-"+i),wrap=$("#manual-boxwrap-"+i),btn=$(`[data-build-manual="${i}"]`);if(sourceSel&&wrap){const sync=()=>wrap.classList.toggle("hidden",sourceSel.value!=="builtin");sourceSel.onchange=sync;sync()}if(btn)btn.onclick=()=>buildManualVariant(i)})}
+function resultCsv(groups){const rows=[["SKU","方案序号","产品长cm","产品宽cm","产品高cm","单件kg","数量","推荐箱长cm","推荐箱宽cm","推荐箱高cm","来源","放置朝向","排列X","排列Y","层数Z","每箱件数","箱数","满箱毛重kg","尾箱件数","尾箱毛重kg","平均利用率"]];groups.forEach(g=>g.variants.forEach((p,idx)=>rows.push([p.sku.name,idx+1,p.sku.l,p.sku.w,p.sku.h,p.sku.weight,p.sku.qty,p.box.l,p.box.w,p.box.h,p.manual?(p.source==="builtin"?"手动-内置箱规":"手动-建议新购"):(p.source==="builtin"?"内置箱规":"建议新购"),orientationText(p),...(p.grid||["混合",""," "]),p.cap,p.boxes,p.fullGross,p.lastCount,p.lastGross,(p.avgFill*100).toFixed(1)+"%"])));return rows.map(r=>r.map(csvCell).join(",")).join("\n")}
 
-function zipMatches(label,zip){
-  zip=txt(zip).replace(/\D/g,""); label=txt(label); if(!zip)return false;
-  const p1=zip[0],p2=zip.slice(0,2);
-  if(/97\.98\.99/.test(label)) return ["97","98","99"].includes(p2);
-  let m=label.match(/邮编\s*([0-9.]+)/); if(m)return m[1].split(".").includes(p1);
-  m=label.match(/邮编([0-9.]+)/); if(m)return m[1].split(".").includes(p1);
-  if(/西岸/.test(label))return ["8","9"].includes(p1);
-  if(/中部|中北岸/.test(label))return ["3","4","5","6","7"].includes(p1);
-  if(/东岸|东部|东南岸/.test(label))return ["0","1","2","3"].includes(p1);
-  return false;
-}
-function exactOrigin(header,origin){
-  const s=txt(header),o=txt(origin); if(!s||!o)return false;
-  return s===o || s.split(/[\/、]/).includes(o) || s.includes(o);
-}
-function nearestTitle(rows,r,c){
-  for(let rr=r;rr>=Math.max(0,r-4);rr--){
-    for(let cc=c;cc>=Math.max(0,c-2);cc--){
-      const v=txt(rows[rr]?.[cc]); if(v && /日达|空派|空卡|快递|卡派|直送/.test(v))return v;
-    }
-  } return "";
-}
-function findRightTimeCol(rows,headerRow,startCol,endCol){
-  for(let c=startCol;c<endCol;c++){ if(/时效/.test(txt(rows[headerRow]?.[c])))return c; } return -1;
-}
-function thresholdFrom(text,fc){
-  const s=txt(text);
-  let priceTierKg=null,priceTierCbm=null;
-  let m=s.match(/(\d+(?:\.\d+)?)\s*kg\+/i); if(m)priceTierKg=+m[1];
-  m=s.match(/(\d+(?:\.\d+)?)\s*CBM\+/i); if(m)priceTierCbm=+m[1];
-  if(/^WM-/i.test(fc) && /WM仓库100KG/i.test(s))priceTierKg=100;
-  return {priceTierKg,priceTierCbm,text:s||"未标注"};
-}
-function explicitMinimumFromText(text){
-  const s=txt(text);
-  let minKg=null,minCbm=null,billUpKg=null,billUpCbm=null;
-  let m=s.match(/(?:最低|起收|起算|最低收费重(?:量)?(?:不低于)?)[^0-9]{0,8}(\d+(?:\.\d+)?)\s*KG/i);
-  if(m)minKg=+m[1];
-  m=s.match(/(?:最低|起收|起算|最低收费体积)[^0-9]{0,8}(\d+(?:\.\d+)?)\s*CBM/i);
-  if(m)minCbm=+m[1];
-  m=s.match(/不足\s*(\d+(?:\.\d+)?)\s*KG[^。；]{0,20}按(?:照)?\s*(\d+(?:\.\d+)?)\s*KG/i);
-  if(m)billUpKg=+m[2];
-  m=s.match(/不足\s*(\d+(?:\.\d+)?)\s*CBM[^。；]{0,20}按(?:照)?\s*(\d+(?:\.\d+)?)\s*CBM/i);
-  if(m)billUpCbm=+m[2];
-  return {minKg,minCbm,billUpKg,billUpCbm};
-}
-function commonPackageRisk(s,mode,opt={}){
-  const m=shipMetrics(s), dims=m.dims, longest=dims[0], second=dims[1], girth=longest+2*(dims[1]+dims[2]);
-  let fee=0,warn=[],hard=false,manual=false;
-  if(mode==="海运快递派"||mode==="空运快递派"){
-    if(m.kgBox>68){hard=true;warn.push("单箱实重>68KG：快递派无服务");}
-    if(longest>274){hard=true;warn.push("最长边>274CM：快递派无服务");}
-    if(girth>419){hard=true;warn.push("最长边+围长>419CM：快递派无服务");}
-    const sea=mode==="海运快递派";
-    if(!hard && girth>315){manual=true;warn.push("围长>315CM：需单询");}
-    else if(!hard && girth>266){fee+=(sea?140:272)*m.boxes;warn.push(`超围长附加约${sea?140:272}元/箱`);}
-    if(!hard && m.kgBox>22.6 && m.kgBox<68){fee+=(sea?140:358)*m.boxes;warn.push(`超重附加约${sea?140:358}元/箱`);}
-    if(longest>120||second>76)warn.push("超过快递标准尺寸，需关注官方附加费/异形判定");
-    if(/编织袋|气泡袋|缠膜|扎带|木箱|金属箱|防撞角|异形/.test($("productNote").value))warn.push("包装可能触发异形费，最终以尾程账单为准");
-  }else if(mode==="海运卡派"){
-    const isCbm=!!opt.isCbm, billCbm=num(opt.billCbm), channel=txt(opt.channel);
-    if(longest>220){manual=true;warn.push("最长边>220CM：卡派需单询");}
-    else if(longest>180){
-      if(/海陆/.test(channel)){manual=true;warn.push("海陆渠道最长边>180CM：按表内规则需单询");}
-      else if(isCbm){fee+=280*billCbm;warn.push("超长180–220CM：不包税参考+280元/CBM");}
-      else {fee+=1.7*m.totalKg;warn.push("超长180–220CM：包税参考+1.7元/KG");}
-    }else if(longest>130){
-      if(isCbm){fee+=140*billCbm;warn.push("超长130–180CM：不包税参考+140元/CBM");}
-      else {fee+=0.8*m.totalKg;warn.push("超长130–180CM：包税参考+0.8元/KG");}
-    }
-    if(longest>120 && second>100){manual=true;warn.push("最长边>120CM且第二边>100CM：附加费需单询");}
-  }
-  return {fee,warn,hard,manual,girth};
-}
-function candidateBase(s,mode,channel,source){
-  return {shipId:s.id,dest:s.fc||s.zip||"未命名",zip:s.zip,mode,channel,source,eligible:true,manual:false,reasons:[],warnings:[],baseFreight:0,extra:0,billable:"",startRule:"",timeText:"",timeBasis:"",days:null,riskDelay:null,confidence:TEMPLATE==="ansu"?98:65};
-}
+function csvCell(v){const s=String(v??"");return /[",\n]/.test(s)?`"${s.replace(/"/g,'""')}"`:s}
+function downloadCSV(text,name){const blob=new Blob(["\ufeff"+text],{type:"text/csv;charset=utf-8"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),300)}
+function initViewer(p,key){const canvas=$(`#canvas-${key}`),sel=$(`[data-viewsel="${key}"]`);if(!canvas)return;const st={yaw:-.68,pitch:.58,drag:false,x:0,y:0};const redraw=()=>{const last=sel.value==="last",viewPlan=last&&p.tailPlan?{...p,box:p.tailPlan.box}:p,items=last?p.lastPlacement:p.placement;drawScene(canvas,viewPlan,items,st)};sel.onchange=redraw;canvas.onpointerdown=e=>{st.drag=true;st.x=e.clientX;st.y=e.clientY;canvas.setPointerCapture(e.pointerId)};canvas.onpointermove=e=>{if(!st.drag)return;st.yaw+=(e.clientX-st.x)*.01;st.pitch=Math.max(.12,Math.min(1.28,st.pitch+(e.clientY-st.y)*.008));st.x=e.clientX;st.y=e.clientY;redraw()};canvas.onpointerup=()=>st.drag=false;canvas.onpointercancel=()=>st.drag=false;canvas.ondblclick=()=>{st.yaw=-.68;st.pitch=.58;redraw()};new ResizeObserver(redraw).observe(canvas);redraw()}
+function drawScene(canvas,p,items,st){const rect=canvas.getBoundingClientRect(),dpr=Math.min(2,window.devicePixelRatio||1);const W=Math.max(300,rect.width),H=Math.max(260,rect.height);if(canvas.width!==Math.round(W*dpr)||canvas.height!==Math.round(H*dpr)){canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr)}const ctx=canvas.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);const L=p.box.l,Wd=p.box.w,Ht=p.box.h,center=[L/2,Wd/2,Ht/2],maxD=Math.max(L,Wd,Ht),scale=Math.min(W*.62,H*.7)/Math.max(maxD,1);function tr(v){let x=v[0]-center[0],y=v[1]-center[1],z=v[2]-center[2];const cy=Math.cos(st.yaw),sy=Math.sin(st.yaw),cp=Math.cos(st.pitch),sp=Math.sin(st.pitch);const x1=x*cy-y*sy,y1=x*sy+y*cy,z1=z;const y2=y1*cp-z1*sp,z2=y1*sp+z1*cp;return{x:W/2+x1*scale,y:H*.56-z2*scale,depth:y2}}function cubeFaces(o,idx=0){const x=o.x||0,y=o.y||0,z=o.z||0,l=o.l,w=o.w,h=o.h;const vs=[[x,y,z],[x+l,y,z],[x+l,y+w,z],[x,y+w,z],[x,y,z+h],[x+l,y,z+h],[x+l,y+w,z+h],[x,y+w,z+h]].map(tr);const f=[[0,1,2,3],[4,7,6,5],[0,4,5,1],[1,5,6,2],[2,6,7,3],[3,7,4,0]];return f.map((ids,fi)=>({pts:ids.map(j=>vs[j]),depth:ids.reduce((a,j)=>a+vs[j].depth,0)/4,fi,idx}))}let faces=[];const orientColors=new Map();items.forEach(it=>{const k=`${it.l}×${it.w}×${it.h}`;if(!orientColors.has(k))orientColors.set(k,orientColors.size)});items.forEach(it=>{const k=`${it.l}×${it.w}×${it.h}`;faces.push(...cubeFaces(it,orientColors.get(k)||0))});faces.sort((a,b)=>a.depth-b.depth);const fills=["rgba(59,130,246,.78)","rgba(16,185,129,.76)","rgba(245,158,11,.76)","rgba(139,92,246,.74)","rgba(236,72,153,.72)","rgba(14,165,233,.76)"];ctx.lineJoin="round";for(const f of faces){ctx.beginPath();f.pts.forEach((q,j)=>j?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y));ctx.closePath();ctx.fillStyle=fills[f.idx%fills.length];ctx.fill();ctx.strokeStyle="rgba(37,78,132,.55)";ctx.lineWidth=.7;ctx.stroke()}const boxFaces=cubeFaces({x:0,y:0,z:0,l:L,w:Wd,h:Ht});ctx.strokeStyle="rgba(71,85,105,.72)";ctx.lineWidth=1.35;boxFaces.forEach(f=>{ctx.beginPath();f.pts.forEach((q,j)=>j?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y));ctx.closePath();ctx.stroke()});ctx.fillStyle="#56677c";ctx.font="11px system-ui";ctx.fillText(`${L} × ${Wd} × ${Ht} cm`,12,20);ctx.fillStyle="#7a8899";ctx.fillText(`显示 ${items.length} 件`,12,36)}
+function addQuickBoxes(){const hits=$("#boxQuick").value.split(/[,，;\n]+/).map(x=>x.trim()).filter(Boolean);let added=0;hits.forEach((s,i)=>{const a=s.replace(/[×xX*]/g," ").trim().split(/\s+/).map(Number);if(a.length===3&&a.every(v=>v>0)){customBoxes.push({id:`c${Date.now()}-${i}`,name:`自定义 ${a.join("×")}`,l:a[0],w:a[1],h:a[2],builtin:false});added++}});persistBoxes();renderBoxes();$("#boxQuick").value="";toast(`已加入 ${added} 个箱规`)}
+function importBatch(){const lines=$("#batchSku").value.split(/\n+/).map(x=>x.trim()).filter(Boolean);let ok=0;for(const line of lines){const a=line.split(/\t|,|，|\s+/).filter(Boolean);if(a.length<6)continue;const [name,l,w,h,weight,qty]=a;const vals=[l,w,h,weight,qty].map(Number);if(vals.every(v=>v>0)){skuRow({name,l:vals[0],w:vals[1],h:vals[2],weight:vals[3],qty:Math.floor(vals[4]),rotate:true});ok++}}toast(`已导入 ${ok} 个 SKU`)}
+function loadDemo(){$("#skuBody").innerHTML="";skuRow({name:"浴垫-A",l:40,w:30,h:5,weight:.85,qty:80});skuRow({name:"烛台-B",l:18,w:14,h:12,weight:.62,qty:120});skuRow({name:"礼品袋-C",l:22,w:18,h:3.5,weight:.12,qty:200})}
+$$('.mode-tabs button').forEach(b=>b.onclick=()=>{$$('.mode-tabs button').forEach(x=>x.classList.remove('active'));b.classList.add('active');goal=b.dataset.goal});
+$("#addSku").onclick=()=>skuRow();$("#demo").onclick=loadDemo;$("#clearSku").onclick=()=>{$("#skuBody").innerHTML="";skuRow();countSku()};$("#toggleBatch").onclick=()=>$("#batchPanel").classList.toggle("hidden");$("#importSku").onclick=importBatch;$("#addBoxes").onclick=addQuickBoxes;$("#resetBoxes").onclick=()=>{customBoxes=[];persistBoxes();renderBoxes();toast("已恢复内置 45 个箱规")};$("#exportBoxLib").onclick=()=>{const rows=[["名称","长cm","宽cm","高cm","来源"],...allBoxes().map(b=>[b.name,b.l,b.w,b.h,b.builtin?"内置":"自定义"])];downloadCSV(rows.map(r=>r.map(csvCell).join(",")).join("\n"),"箱规库.csv")};
+$("#calculate").onclick=()=>{const skus=readSkus(),lim=limits(),err=validate(skus,lim);if(err){$("#results").innerHTML=`<div class="empty" style="color:#b42318">${esc(err)}</div>`;return}const t0=performance.now();plans=skus.map(s=>choosePlanGroup(s,lim));renderResults();toast(`已完成 ${skus.length} 个 SKU · ${(performance.now()-t0).toFixed(0)} ms`)};
+renderBoxes();loadDemo();
+})();
 
-
-function originLocGroup(origin){
-  origin=txt(origin);
-  if(["深圳","广州","东莞南城","惠州"].includes(origin))return "华南";
-  if(["中山","汕头"].includes(origin))return "汕头";
-  if(["厦门","泉州","福州"].includes(origin))return "厦门/泉州/福州";
-  if(["义乌","苏州","杭州","杭州仓","绍兴"].includes(origin))return "华东";
-  if(origin==="上海")return "上海";
-  if(origin==="宁波")return "宁波";
-  if(["青岛","郑州","温州","台州","连云港","南京","合肥"].includes(origin))return "青岛/郑州/温州/台州/连云港/南京/合肥";
-  if(["天津","南昌","石家庄"].includes(origin))return "天津/南昌/石家庄";
-  if(origin==="济南")return "济南";
-  if(["潍坊","沧州","保定"].includes(origin))return "潍坊/沧州/保定";
-  if(origin==="西安")return "西安";
-  if(["武汉","长沙","成都"].includes(origin))return "武汉/长沙/成都";
-  if(origin==="重庆")return "重庆";
-  return origin;
-}
-function colLetters(n){let s="";while(n){n--;s=String.fromCharCode(65+n%26)+s;n=Math.floor(n/26)}return s}
-function rawCell(sheet,addr){return WB?.Sheets?.[sheet]?.[addr]||null}
-function resolveNumericCell(sheet,addr,seen=new Set()){
-  const key=sheet+"!"+addr;if(seen.has(key))return null;seen.add(key);
-  const c=rawCell(sheet,addr);if(!c)return null;
-  if(typeof c.v==="number")return c.v;
-  if(typeof c.v==="string" && /^\d+(\.\d+)?$/.test(c.v))return +c.v;
-  const f=c.f||"";
-  let m=f.match(/^\$?([A-Z]+)\$?(\d+)\+(\d+)$/);
-  if(m){const base=resolveNumericCell(sheet,m[1]+m[2],seen);return base==null?null:base+(+m[3])}
-  return null;
-}
-function findRowByValue(rows,colIdx,value){
-  value=txt(value).toUpperCase();
-  for(let r=0;r<rows.length;r++){
-    const v=txt(rows[r]?.[colIdx]).toUpperCase();
-    if(v===value || v.startsWith(value+"-") || v.startsWith(value+" "))return r;
-  }
-  return -1;
-}
-function mappedSeaDefinitions(){
-  const qRows=SHEETS["价格查询表-间接版"]||[], defs=[];
-  if(!WB?.Sheets?.["价格查询表-间接版"] || !SHEETS["定位"])return defs;
-  for(let r=8;r<=55;r++){
-    const channel=txt(qRows[r-1]?.[1]); if(!channel)continue;
-    const cell=rawCell("价格查询表-间接版","E"+r); const f=cell?.f||"";
-    const m=f.match(/VLOOKUP\(\$C\$5,(?:'([^']+)'|([^!,]+))!/i); if(!m)continue;
-    const source=txt(m[1]||m[2]);
-    if(!/^(美西|美东|美中)/.test(source))continue;
-    defs.push({row:r,channel,source});
-  }
-  return defs;
-}
-function locationRow(channel){
-  const rows=SHEETS["定位"]||[];
-  return rows.findIndex(r=>txt(r?.[0])===txt(channel));
-}
-function locationHeaderCol(label){
-  const row=SHEETS["定位"]?.[0]||[];
-  return row.findIndex(v=>txt(v)===label);
-}
-function locIndex(channel,label){
-  const rr=locationRow(channel),cc=locationHeaderCol(label); if(rr<0||cc<0)return null;
-  return resolveNumericCell("定位",colLetters(cc+1)+(rr+1));
-}
-function sourceBlockTitle(rows,priceIndex){
-  if(!priceIndex)return "";
-  const start=Math.floor((priceIndex-2)/28)*28+2;
-  return txt(rows?.[3]?.[start-1]);
-}
-function parseDelayHint(text){
-  text=txt(text);
-  let m=text.match(/(?:延误|延时|延误预计|预计时效延误)[^0-9]{0,12}(\d+)\s*[-~至]\s*(\d+)\s*天/);
-  if(m)return [+m[1],+m[2]];
-  m=text.match(/(?:延误|延时|预计时效延误)[^0-9]{0,12}(\d+)\s*天/);
-  if(m)return [+m[1],+m[1]];
-  return null;
-}
-function parseMappedSeaChannels(s){
-  const fc=txt(s.fc).toUpperCase(),origin=originLocGroup($("origin").value),tax=$("tax").value;
-  if(!fc)return [];
-  const defs=mappedSeaDefinitions(),out=[];
-  const basisList=tax==="包税"?["BS"]:(tax==="不包税"?["NBS"]:["BS","NBS"]);
-  for(const d of defs){
-    const rows=SHEETS[d.source]; if(!rows)continue;
-    const fr=findRowByValue(rows,0,fc); if(fr<0)continue;
-    for(const basis of basisList){
-      const priceIdx=locIndex(d.channel,origin+"-"+basis); if(!priceIdx)continue;
-      const raw=txt(rows[fr]?.[priceIdx-1]); if(!/^\d+(\.\d+)?$/.test(raw))continue;
-      const rate0=+raw, q=candidateBase(s,"海运卡派",d.channel,`${d.source} 第${fr+1}行 / 定位映射`);
-      const m=shipMetrics(s), title=sourceBlockTitle(rows,priceIdx), timeIdx=locIndex(d.channel,"签收时效 / 开船后-入仓时效"),delayIdx=locIndex(d.channel,"延时赔付 / 开船后-不入仓时效");
-      q.confidence=100;
-      q.warnings.push(`原表渠道块：${title||d.channel}`);
-      if(basis==="BS"){
-        let billKg=Math.max(m.totalKg,10),rate=rate0;
-        const wm=/^WM-/i.test(fc);
-        if(wm){
-          q.startRule="包税基准价100KG+；沃尔玛21–49KG +2元/KG，50–99KG +1元/KG；卡派单票计费重不低于10KG";
-          if(billKg<21){q.manual=true;q.reasons.push(`WM仓当前${billKg.toFixed(1)}KG，表内仅明确21KG以上加价规则，低于21KG需单询`)}
-          else if(billKg<50)rate+=2; else if(billKg<100)rate+=1;
-        }else{
-          q.startRule="包税基准价50KG+；FBA 10–49KG按基准价 +1元/KG；卡派单票计费重不低于10KG";
-          if(billKg<50)rate+=1;
-        }
-        q.billable=`${billKg.toFixed(1)} KG @ ¥${rate.toFixed(2)}/KG`;
-        if(!q.manual)q.baseFreight=billKg*rate;
-        if(m.totalKg<10)q.warnings.push(`原发货须知：卡派单票计费重量不低于10KG，已按10KG计`);
-      }else{
-        const billCbm=Math.max(m.totalCbm,m.totalKg/363);
-        q.startRule="不包税基准价0.5CBM+；计费体积按实方与363KG/CBM折算取大";
-        q.billable=`${billCbm.toFixed(3)} CBM @ ¥${rate0.toFixed(0)}/CBM`;
-        if(billCbm<0.5){q.manual=true;q.reasons.push(`当前${billCbm.toFixed(3)}CBM低于原表0.5CBM+报价档，原表未给更小体积自动收费规则，需单询`) }
-        else q.baseFreight=billCbm*rate0;
-      }
-      if(timeIdx){q.timeText=txt(rows[fr]?.[timeIdx-1]);q.days=dayRange(q.timeText);q.timeBasis="开船后签收/入仓"}
-      if(delayIdx){const dt=txt(rows[fr]?.[delayIdx-1]);if(dt&&dt!=="-")q.warnings.push(`延时赔付栏：${dt}`)}
-      const rd=parseDelayHint(title); if(rd){q.riskDelay=rd;q.warnings.push(`渠道标题提示预计额外延误${rd[0]}–${rd[1]}天，速度评分已计入`)}
-      const risk=commonPackageRisk(s,"海运卡派",{isCbm:basis==="NBS",billCbm:basis==="NBS"?Math.max(m.totalCbm,m.totalKg/363):0,channel:title});
-      q.extra+=risk.fee;q.warnings.push(...risk.warn);if(risk.hard){q.eligible=false;q.reasons.push(...risk.warn)}if(risk.manual){q.manual=true;q.reasons.push(...risk.warn)}
-      // Attach US general product / packaging note awareness.
-      q.warnings.push("已叠加美国发货须知的卡派尺寸/超长规则；产品类附加费仍需结合具体品名核对");
-      out.push(q);
-    }
-  }
-  return dedupe(out);
-}
-
-function parseSeaCard(s){
-  const origin=$("origin").value.trim(), tax=$("tax").value, fc=txt(s.fc).toUpperCase(), out=[];
-  if(!fc)return out;
-  const sheetNames=Object.keys(SHEETS).filter(n=>/^(美西|美东|美中)|美国海运/.test(n) && n!=="美国快递" && !/查询表/.test(n));
-  for(const name of sheetNames){
-    const rows=SHEETS[name]; if(!rows?.length)continue;
-    // Find exact FC rows in first column.
-    for(let r=0;r<rows.length;r++){
-      const fcCell=txt(rows[r]?.[0]).toUpperCase();
-      if(!(fcCell===fc || fcCell.startsWith(fc+"-")))continue;
-      // Channel starts are title cells in row 4 equivalent: search 4 rows above destination for "*日达*卡派".
-      for(let rr=Math.max(0,r-8);rr<r;rr++){
-        (rows[rr]||[]).forEach((v,c)=>{
-          const title=txt(v); if(!title || !/卡派|直送/.test(title) || /仓库代码/.test(title))return;
-          // threshold rows usually next line, origins next 2 lines.
-          const thRow=rr+1, orgRow=rr+2;
-          for(let sc=c;sc<Math.min((rows[orgRow]||[]).length,c+28);sc++){
-            const th=txt(rows[thRow]?.[sc]);
-            if(!/(包税|不包税)/.test(th))continue;
-            if(tax && !th.includes(tax))continue;
-            const t=thresholdFrom(th,fc);
-            // 表头“50KG+ / 0.5CBM+”只视为公开报价档位，不自动当最低起运量。
-            // 只有备注明确写“最低/起收/不足按X计费”时才当真实最低收费规则。
-            // 美国发货须知对卡派的通用底线为：单票计费重量不低于10KG。
-            // locate origin from this threshold start up to 14 cols.
-            let oc=-1;
-            for(let cc=sc;cc<Math.min((rows[orgRow]||[]).length,sc+14);cc++){
-              if(exactOrigin(rows[orgRow]?.[cc],origin)){oc=cc;break}
-            }
-            if(oc<0)return;
-            const rateRaw=txt(rows[r]?.[oc]); if(!/^\d+(\.\d+)?$/.test(rateRaw))return;
-            const q=candidateBase(s,"海运卡派",title,`${name} 第${r+1}行`);
-            const m=shipMetrics(s), rate=+rateRaw, isCbm=/不包税|CBM/.test(th);
-            q.startRule=`${th}（公开报价档位，不等于最低起运量）`;
-            if(isCbm){
-              const billCbm=Math.max(m.totalCbm,m.totalKg/363);
-              q.billable=billCbm.toFixed(3)+" CBM";
-              // 0.5CBM+ here is a published price tier. Below it, don't invent a 0.5CBM billing minimum.
-              if(t.priceTierCbm && billCbm<t.priceTierCbm){
-                q.manual=true;
-                q.reasons.push(`当前 ${billCbm.toFixed(3)}CBM 低于表内 ${t.priceTierCbm}CBM+ 公开价档；备注未写“不足按${t.priceTierCbm}CBM计费”，需单询小票价，不能自动补到${t.priceTierCbm}CBM`);
-              } else {
-                q.baseFreight=rate*billCbm;
-              }
-            }else{
-              // US card-delivery general note: single-ticket billable weight not lower than 10KG.
-              const billKg=Math.max(m.totalKg,10);
-              q.billable=billKg.toFixed(1)+" KG";
-              if(m.totalKg<10) q.warnings.push(`卡派通用备注：单票计费重量不低于10KG，当前${m.totalKg.toFixed(1)}KG按10KG计费`);
-              if(t.priceTierKg && billKg<t.priceTierKg){
-                q.manual=true;
-                q.reasons.push(`当前计费重 ${billKg.toFixed(1)}KG 低于表内 ${t.priceTierKg}KG+ 公开价档；备注未写“不足按${t.priceTierKg}KG计费”，需单询小票价，不能自动补到${t.priceTierKg}KG`);
-              } else {
-                q.baseFreight=rate*billKg;
-              }
-            }
-            const risk=commonPackageRisk(s,"海运卡派",{isCbm,billCbm:isCbm?Math.max(m.totalCbm,m.totalKg/363):0,channel:title});
-            q.extra+=risk.fee;q.warnings.push(...risk.warn);
-            if(risk.hard){q.eligible=false;q.reasons.push(...risk.warn)}
-            if(risk.manual){q.manual=true;q.reasons.push(...risk.warn)}
-            // Time columns in same block
-            let tc=-1,dc=-1;
-            for(let cc=c;cc<Math.min((rows[thRow]||[]).length,c+30);cc++){
-              const h=txt(rows[thRow]?.[cc]);
-              if(tc<0&&/签收时效|入仓时效/.test(h))tc=cc;
-              if(dc<0&&/延时赔付/.test(h))dc=cc;
-            }
-            if(tc>=0){q.timeText=txt(rows[r]?.[tc]);q.days=dayRange(q.timeText);q.timeBasis="开船后签收/入仓";}
-            let titleDelay=(title.match(/(?:延误预计|延时|延误)[^0-9]*(\d+)\s*[-~至]\s*(\d+)\s*天/)||[]);
-            if(!titleDelay.length && /延/.test(title)) titleDelay=(title.match(/(\d+)\s*[-~至]\s*(\d+)\s*天/)||[]);
-            if(titleDelay.length){
-              q.riskDelay=[+titleDelay[1],+titleDelay[2]];
-              q.warnings.push(`表内提示近期额外延误约 ${titleDelay[1]}–${titleDelay[2]} 天，速度建议已计入风险`);
-            }
-            out.push(q);
-          }
-        });
-      }
-    }
-  }
-  return dedupe(out);
-}
-
-function parseSeaExpress(s){
-  const rows=SHEETS["美国快递"]; if(!rows)return [];
-  const origin=$("origin").value.trim(), zip=txt(s.zip), out=[];
-  for(let r=0;r<rows.length;r++){
-    (rows[r]||[]).forEach((v,c)=>{
-      const title=txt(v); if(!/快递派/.test(title))return;
-      const thRow=r+1,orgRow=r+2;
-      // require package rate block with origin within ~14 cols
-      let oc=-1; for(let cc=c;cc<Math.min((rows[orgRow]||[]).length,c+14);cc++){if(exactOrigin(rows[orgRow]?.[cc],origin)){oc=cc;break}}
-      if(oc<0)return;
-      // find region row
-      let regionRow=-1,regionLabel="";
-      for(let rr=orgRow+1;rr<Math.min(rows.length,orgRow+8);rr++){
-        const label=txt(rows[rr]?.[0]);
-        if(/美国/.test(label) && zip && zipMatches(label,zip)){regionRow=rr;regionLabel=label;break}
-      }
-      const q=candidateBase(s,"海运快递派",title,`美国快递 第${r+1}行`);
-      q.startRule="基础价100KG+；45–99KG +1.5元/KG；12–44KG +3元/KG；单箱不足12KG按12KG";
-      if(!zip){q.eligible=false;q.reasons.push("未填写目的仓邮编，快递派无法精准匹配区域");out.push(q);return}
-      if(regionRow<0){q.eligible=false;q.reasons.push(`邮编 ${zip} 未匹配到该渠道区域`);out.push(q);return}
-      const rateRaw=txt(rows[regionRow]?.[oc]); if(!/^\d+(\.\d+)?$/.test(rateRaw)){q.eligible=false;q.reasons.push("该起运地/区域无报价");out.push(q);return}
-      const m=shipMetrics(s);
-      const perBox=Math.max(m.kgBox,12), billKg=perBox*m.boxes;
-      let rate=+rateRaw;
-      if(billKg<45)rate+=3; else if(billKg<100)rate+=1.5;
-      q.billable=`${billKg.toFixed(1)} KG（${perBox.toFixed(1)}KG/箱）`;
-      q.baseFreight=rate*billKg;
-      q.warnings.push(`匹配区域：${regionLabel}；基础价 ${rateRaw} 元/KG，当前适用 ${rate.toFixed(2)} 元/KG`);
-      // time and delay in title block
-      for(let cc=c;cc<Math.min((rows[thRow]||[]).length,c+16);cc++){
-        if(/提取时效/.test(txt(rows[thRow]?.[cc]))){q.timeText=txt(rows[regionRow]?.[cc]);q.days=dayRange(q.timeText);q.timeBasis="开船后提取/签收参考";}
-      }
-      const risk=commonPackageRisk(s,"海运快递派");q.extra+=risk.fee;q.warnings.push(...risk.warn);
-      if(risk.hard){q.eligible=false;q.reasons.push(...risk.warn)} if(risk.manual){q.manual=true;q.reasons.push(...risk.warn)}
-      if(/近期.*延误预计|延误\s*\d+/.test(title))q.warnings.push("渠道标题含近期延误提示，请以最新船期为准");
-      out.push(q);
-    });
-  }
-  return dedupe(out);
-}
-
-function parseAirExpress(s){
-  const origin=$("origin").value.trim(),zip=txt(s.zip),cargo=$("cargo").value,out=[];
-  const names=Object.keys(SHEETS).filter(n=>/^美国空运&/.test(n));
-  for(const name of names){
-    if(cargo==="带电" && !/带电/.test(name))continue;
-    if(cargo==="普货" && /带电/.test(name))continue;
-    const rows=SHEETS[name];
-    for(let r=0;r<rows.length;r++){
-      (rows[r]||[]).forEach((v,c)=>{
-        const title=txt(v); if(!/美国空派/.test(title))return;
-        const orgRow=r+1,tierRow=r+2;
-        let oc=-1; for(let cc=c;cc<Math.min((rows[orgRow]||[]).length,c+45);cc++){if(exactOrigin(rows[orgRow]?.[cc],origin)){oc=cc;break}}
-        if(oc<0)return;
-        let regionRow=-1,regionLabel="";
-        for(let rr=tierRow+1;rr<Math.min(rows.length,tierRow+8);rr++){
-          const label=txt(rows[rr]?.[0]); if(/美国/.test(label)&&zip&&zipMatches(label,zip)){regionRow=rr;regionLabel=label;break}
-        }
-        const q=candidateBase(s,"空运快递派",title,`${name} 第${r+1}行`);
-        q.startRule="计费重=实重/6000材积重取大；单箱不足12KG按12KG；按12–70/71–99/100KG+分段";
-        if(!zip){q.eligible=false;q.reasons.push("未填写邮编，无法匹配空派区域");out.push(q);return}
-        if(regionRow<0){q.eligible=false;q.reasons.push("目的邮编不在该线路报价区域");out.push(q);return}
-        const m=shipMetrics(s), volPer=num(s.L)*num(s.W)*num(s.H)/6000, perBox=Math.max(m.kgBox,volPer,12), billKg=perBox*m.boxes;
-        let tierOffset=billKg<=70?0:(billKg<=99?1:2);
-        const rateRaw=txt(rows[regionRow]?.[oc+tierOffset]);
-        if(!/^\d+(\.\d+)?$/.test(rateRaw)){q.eligible=false;q.reasons.push("当前重量段无报价");out.push(q);return}
-        q.billable=`${billKg.toFixed(1)} KG（${perBox.toFixed(1)}KG/箱）`;q.baseFreight=(+rateRaw)*billKg;
-        q.warnings.push(`匹配区域：${regionLabel}；材积除6000`);
-        const dr=titleDayRange(title); if(dr){q.timeText=(title.match(/[一二三四五六七八九十\d]+日提/)||[""])[0]||`${dr[0]}日提`;q.days=dr;q.timeBasis="提取时效（非签收时效）";}
-        const risk=commonPackageRisk(s,"空运快递派");q.extra+=risk.fee;q.warnings.push(...risk.warn);
-        if(risk.hard){q.eligible=false;q.reasons.push(...risk.warn)} if(risk.manual){q.manual=true;q.reasons.push(...risk.warn)}
-        out.push(q);
-      });
-    }
-  }
-  return dedupe(out);
-}
-
-function parseAirCard(s){
-  const rows=SHEETS["美国空卡（8）"]; if(!rows||!txt(s.fc))return [];
-  const fc=txt(s.fc).toUpperCase(),origin=$("origin").value.trim(),out=[];
-  for(let r=0;r<rows.length;r++){
-    if(txt(rows[r]?.[0]).toUpperCase()!==fc)continue;
-    // Header is fixed for this sheet.
-    let oc=-1; for(let c=1;c<12;c++){if(exactOrigin(rows[4]?.[c],origin)){oc=c;break}}
-    if(oc<0)continue;
-    const q=candidateBase(s,"空运卡派",txt(rows[3]?.[1])||"美国空卡",`美国空卡（8） 第${r+1}行`);
-    const m=shipMetrics(s), volPer=num(s.L)*num(s.W)*num(s.H)/6000,billKg=Math.max(m.kgBox,volPer)*m.boxes;
-    q.startRule="500KG+；计费重=实重/6000材积重取大";
-    if(billKg<500){q.eligible=false;q.reasons.push(`不足500KG起算（当前计费重 ${billKg.toFixed(1)}KG）`);}
-    const raw=txt(rows[r]?.[oc]); if(/^\d+(\.\d+)?$/.test(raw)){q.billable=billKg.toFixed(1)+" KG";q.baseFreight=(+raw)*billKg}
-    q.timeText=txt(rows[r]?.[11]);q.days=dayRange(q.timeText);q.timeBasis="出仓后时效";
-    out.push(q);
-  }
-  return out;
-}
-
-function parseCourierCombo(s){
-  const rows=SHEETS["美国快递组合"]; if(!rows)return [];
-  const cargo=$("cargo").value,m=shipMetrics(s),out=[];
-  const groups=[{nameCol:1,firstPrice:2,timeCol:7,divCol:8,noteCol:9,tax:false},{nameCol:11,firstPrice:12,timeCol:17,divCol:18,noteCol:19,tax:true}];
-  for(let r=4;r<=16 && r<rows.length;r++){
-    for(const g of groups){
-      const name=txt(rows[r]?.[g.nameCol]); if(!/(UPS|DHL|红单|特快)/i.test(name))continue;
-      const divisor=/6000/.test(txt(rows[r]?.[g.divCol]))?6000:5000;
-      const volPer=num(s.L)*num(s.W)*num(s.H)/divisor;
-      let perBox=Math.max(m.kgBox,volPer);
-      const note=txt(rows[r]?.[g.noteCol]);
-      if(/不足8KG.*按8KG/.test(note))perBox=Math.max(perBox,8);
-      const billKg=perBox*m.boxes;
-      let tier=billKg<=30?0:(billKg<=49?1:(billKg<=74?2:(billKg<=99?3:4)));
-      const q=candidateBase(s,"国际快递",name,`美国快递组合 第${r+1}行`);
-      q.startRule=`材积除${divisor}；按26–30/31–49/50–74/75–99/100–200KG分段；具体起收以备注为准`;
-      // Eligibility from notes
-      const actual=m.totalKg;
-      const reqReal=(note.match(/实重(?:必须满足|必须高于|)\s*(\d+)KG/i)||[])[1];
-      const reqVol=(note.match(/材积\s*(\d+)KG起收/i)||[])[1];
-      if(reqReal && actual<+reqReal){q.eligible=false;q.reasons.push(`实重不足${reqReal}KG起收（当前${actual.toFixed(1)}KG）`);}
-      if(reqVol && billKg<+reqVol){q.eligible=false;q.reasons.push(`计费/材积重不足${reqVol}KG起收（当前${billKg.toFixed(1)}KG）`);}
-      if(/单件重量不低于8KG|单箱重量.*最低.*8KG/.test(note) && m.kgBox<8 && !/不足8KG.*按8KG/.test(note)){q.eligible=false;q.reasons.push(`单箱实重不足8KG（当前${m.kgBox}KG）`);}
-      if(cargo==="带电" && /不接带电/.test(note)){q.eligible=false;q.reasons.push("该渠道不接带电产品");}
-      const raw=txt(rows[r]?.[g.firstPrice+tier]);
-      if(!/^\d+(\.\d+)?$/.test(raw)){q.eligible=false;q.reasons.push("当前重量段没有数值报价，需单询");}
-      else {q.billable=billKg.toFixed(1)+" KG";q.baseFreight=(+raw)*billKg}
-      if(g.tax)q.extra+=150;
-      if(/清关费[:：]\s*30/.test(note))q.extra+=30;
-      if(cargo==="带电" && /带电\+1/.test(note))q.extra+=billKg;
-      q.timeText=txt(rows[r]?.[g.timeCol]);q.days=dayRange(q.timeText);q.timeBasis="工作日签收参考";
-      q.warnings.push(note||"请核对渠道备注");
-      if(/美东不建议走DHL/.test(note) && /^[0-3]/.test(txt(s.zip)))q.warnings.push("表内明确提示：美东不建议走DHL");
-      out.push(q);
-    }
-  }
-  return dedupe(out);
-}
-
-function parseSmallCourier(s){
-  const rows=SHEETS["快递小货价"]; if(!rows)return [];
-  const m=shipMetrics(s),out=[];
-  if(m.boxes!==1)return out;
-  const groups=[
-    {name:"HKUPS红单欧美小货/5000",w:0,p:1,div:5000},
-    {name:"HKUPS红单6500欧美小货",w:3,p:4,div:6500},
-    {name:"香港DHL美国促销价（小货价）",w:6,p:7,div:5000}
-  ];
-  groups.forEach(g=>{
-    const bill=Math.ceil(Math.max(m.kgBox,num(s.L)*num(s.W)*num(s.H)/g.div)*2)/2;
-    if(bill>20)return;
-    let found=null;
-    for(let r=2;r<Math.min(rows.length,42);r++){if(+rows[r]?.[g.w]===bill && /^\d+(\.\d+)?$/.test(txt(rows[r]?.[g.p]))){found={r,price:+rows[r][g.p]};break}}
-    if(found){
-      const q=candidateBase(s,"快递小货",g.name,`快递小货价 第${found.r+1}行`);
-      q.startRule=`单箱小货价；计费重按${g.div}材积除数并按0.5KG进位；本工具仅在1箱时启用`;
-      q.billable=bill+" KG";q.baseFreight=found.price;q.timeText="见该渠道快递时效";q.timeBasis="快递签收参考";
-      q.warnings.push(rowText(rows[43]||[]),rowText(rows[45]||[]));out.push(q);
-    }
-  });
-  return out;
-}
-function dedupe(arr){
-  const seen=new Set();return arr.filter(x=>{const k=[x.dest,x.mode,x.channel,x.source,x.billable].join("|");if(seen.has(k))return false;seen.add(k);return true})
-}
-
-function allCandidatesForShipment(s){
-  let arr=[];
-  if(TEMPLATE==="ansu"){
-    const mappedSea=parseMappedSeaChannels(s);
-    arr=[...(mappedSea.length?mappedSea:parseSeaCard(s)),...parseSeaExpress(s),...parseAirExpress(s),...parseAirCard(s),...parseCourierCombo(s),...parseSmallCourier(s)];
-    if(s.upsAlt){
-      arr.forEach(x=>{
-        if(x.mode==="海运快递派"||x.mode==="空运快递派"||x.mode==="国际快递"){
-          x.warnings.push(`该仓存在UPS特殊/替代地址记录：${s.upsAlt}。快递派最终必须以本次Amazon箱唛/货件地址为准。`);
-        }
-      });
-    }
-  }else{
-    arr=[...parseCourierCombo(s),...parseSmallCourier(s)];
-    arr.forEach(x=>{x.confidence=Math.min(x.confidence,70);x.manual=true;x.reasons.push("非安速模板：需人工确认列结构和备注")});
-  }
-  const mf=$("modeFilter").value;if(mf)arr=arr.filter(x=>x.mode===mf);
-  return dedupe(arr);
-}
-
-function comparableTime(a,b){return a?.days&&b?.days&&a.timeBasis===b.timeBasis}
-function selectForGoal(list,goal){
-  if(!list.length)return null;
-  if(goal==="cost")return [...list].sort((a,b)=>(a.baseFreight+a.extra)-(b.baseFreight+b.extra))[0];
-  if(goal==="speed"){
-    const timed=list.filter(x=>x.days); if(!timed.length)return selectForGoal(list,"cost");
-    return [...timed].sort((a,b)=>effectiveMaxDays(a)-effectiveMaxDays(b) || (a.baseFreight+a.extra)-(b.baseFreight+b.extra))[0];
-  }
-  const dayValue=num($("dayValue").value);
-  // Balanced: within same time basis, penalize days from fastest in that basis; unknown-time gets a modest uncertainty penalty.
-  const minByBasis={};list.forEach(x=>{if(x.days){minByBasis[x.timeBasis]=Math.min(minByBasis[x.timeBasis]??9999,effectiveMaxDays(x))}});
-  return [...list].sort((a,b)=>{
-    const aEff=effectiveMaxDays(a), bEff=effectiveMaxDays(b);
-    const sa=(a.baseFreight+a.extra)+(((aEff!=null)?(aEff-(minByBasis[a.timeBasis]||aEff)):5)*dayValue);
-    const sb=(b.baseFreight+b.extra)+(((bEff!=null)?(bEff-(minByBasis[b.timeBasis]||bEff)):5)*dayValue);
-    return sa-sb;
-  })[0];
-}
-function renderCoverage(){
-  const mapped=mappedSeaDefinitions();
-  const req=["定位","价格查询表-间接版","发货须知-美国&英国","美国快递","美国快递组合","快递小货价","美国空卡（8）","偏远邮编库","全区邮编系列-特殊地址附加费"];
-  const present=req.filter(x=>SHEETS[x]),missing=req.filter(x=>!SHEETS[x]);
-  const src=[...new Set(mapped.map(x=>x.source))];
-  $("coverageDiag").innerHTML=`<b>本次解析：</b>原生定位海运主渠道 <b>${mapped.length}</b> 条，来源海运Sheet <b>${src.length}</b> 个；核心规则表 <b>${present.length}/${req.length}</b> 个。`+
-    (missing.length?`<br><span class="warn">缺少：${esc(missing.join("、"))}，对应规则不会自动计算。</span>`:`<br><span class="ok">核心价格、发货须知、快递、偏远邮编与特殊地址规则表均存在。</span>`)+
-    `<br><span class="muted">海运价格优先按“定位”Sheet的VLOOKUP列号读取，不再靠附近数字猜列；每个结果都显示原Sheet与行号。</span>`;
-}
-function analyze(){
-  updateKPIsBase();
-  renderCoverage();
-  if(!WB){$("mainAdvice").innerHTML='<span class="bad">请先上传货代报价表。</span>';return}
-  let all=[],excluded=[];
-  shipmentData.forEach(s=>{
-    allCandidatesForShipment(s).forEach(q=>{
-      if(q.manual||!q.eligible)excluded.push(q); else all.push(q);
-    });
-  });
-  const goal=$("goal").value;
-  const selected=[];
-  shipmentData.forEach(s=>{
-    const avail=all.filter(x=>x.shipId===s.id);
-    const pick=selectForGoal(avail,goal);if(pick)selected.push(pick);
-  });
-  const freight=selected.reduce((a,x)=>a+x.baseFreight+x.extra,0);
-  const placement=num($("placement").value)*num($("fx").value), manual=num($("manualExtra").value);
-  const total=freight+placement+manual, units=Math.max(1,num($("units").value));
-  const complete=selected.length===shipmentData.length;
-  $("kFreight").textContent=complete?money(freight):(selected.length?money(freight)+"*":"-");
-  $("kTotal").textContent=complete?money(total):(selected.length?"未完整":"-");
-  $("kUnit").textContent=complete?money(total/units):"-";
-  renderDiagnostics();
-  renderResults(all,excluded,selected,placement,manual,total,complete);
-}
-function renderDiagnostics(){
-  const cards=[];
-  shipmentData.forEach((s,i)=>{
-    const m=shipMetrics(s), name=s.fc||s.zip||`货件${i+1}`, cbmBill=Math.max(m.totalCbm,m.totalKg/363);
-    cards.push({pass:!!s.whVerified,title:`${name} · 仓库地址`,text:s.whVerified?`已自动匹配 ${s.city||""}, ${s.state||""} ${s.zip||""}${s.upsAlt?`；注意该仓有UPS替代地址记录，快递派看箱唛。`:""}`:`仓库代码未在内置库核验；当前邮编 ${s.zip||"未填"}，建议以Amazon当前货件地址确认后再算快递派。`});
-    cards.push({
-      pass:true,title:`${name} · 海运卡派`,
-      text:`当前实重${m.totalKg.toFixed(1)}KG。卡派通用备注是“单票计费重量不低于10KG”；表头50KG+/WM仓100KG+作为公开报价档位处理，不自动视为最低起运量。低于公开价档时需单询，不会擅自补到50/100KG。`
-    });
-    cards.push({
-      pass:true,title:`${name} · 海运快递派`,
-      text:`单箱${m.kgBox.toFixed(1)}KG。发货须知明确：单箱收费重不足12KG按12KG，单票收费重不足12KG也按12KG；整票100KG+用基础价，45–99KG通常+1.5元/KG，12–44KG通常+3元/KG。`
-    });
-    cards.push({
-      pass:true,title:`${name} · 不包税海运`,
-      text:`按实方与363KG/CBM折算取大，当前计费体积约${cbmBill.toFixed(3)}CBM。表头0.5CBM+仅作为公开报价档位；低于0.5CBM而无“不足按0.5CBM”备注时，系统改为单询，不会自动补方。`
-    });
-    const airPer=Math.max(m.kgBox,num(s.L)*num(s.W)*num(s.H)/6000,12),airTotal=airPer*m.boxes;
-    cards.push({pass:true,title:`${name} · 空运快递派`,text:`6000材积重/实重/12KG单箱最低三者取大，当前约${airPer.toFixed(1)}KG/箱、${airTotal.toFixed(1)}KG/票，再进入对应重量报价档。`});
-  });
-  $("diagnostics").innerHTML=cards.map(c=>`<div class="diag ${c.pass?'pass':'fail'}"><b>${c.pass?'✓':'!'} ${esc(c.title)}</b>${esc(c.text)}</div>`).join("");
-}
-function renderResults(all,excluded,selected,placement,manual,total,complete){
-  const selSet=new Set(selected.map(x=>x.source+"|"+x.channel+"|"+x.dest));
-  const sorted=[...all].sort((a,b)=>{
-    const sa=selSet.has(a.source+"|"+a.channel+"|"+a.dest)?0:1,sb=selSet.has(b.source+"|"+b.channel+"|"+b.dest)?0:1;
-    return sa-sb || (a.baseFreight+a.extra)-(b.baseFreight+b.extra);
-  });
-  $("resultCount").textContent=`${all.length} 个可用报价`;
-  $("resultBody").innerHTML=sorted.length?sorted.slice(0,80).map(x=>{
-    const selectedNow=selSet.has(x.source+"|"+x.channel+"|"+x.dest);
-    return `<tr class="${selectedNow?'bestrow':''}">
-      <td><b>${esc(x.dest)}</b><div class="source">${x.zip?esc(x.zip):""}</div></td>
-      <td><span class="tag">${esc(x.mode)}</span></td>
-      <td><b>${esc(x.channel)}</b>${selectedNow?'<span class="tag g" style="margin-left:5px">当前推荐</span>':''}</td>
-      <td class="notes">${esc(x.startRule)}</td><td>${esc(x.billable||"-")}</td>
-      <td class="money">${money(x.baseFreight)}</td><td>${x.extra?money(x.extra):"¥0.00"}</td>
-      <td class="money">${money(x.baseFreight+x.extra)}</td>
-      <td>${esc(x.timeText||"未明确")}${x.riskDelay?`<div class="source warn">+ 风险延误 ${x.riskDelay[0]}–${x.riskDelay[1]} 天</div>`:""}</td><td>${esc(x.timeBasis||"未明确")}</td>
-      <td class="notes">${x.warnings.length?esc([...new Set(x.warnings)].filter(Boolean).join("；")):"-"}</td><td>${esc(x.source)}</td>
-    </tr>`;
-  }).join(""):'<tr><td colspan="12" class="bad" style="text-align:center">没有满足起算和规则的可用报价。</td></tr>';
-
-  $("excludedCount").textContent=excluded.length;
-  $("excludedBody").innerHTML=excluded.length?excluded.slice(0,100).map(x=>`<tr>
-    <td><b>${esc(x.dest)}</b></td><td>${esc(x.mode)}</td><td>${esc(x.channel)}</td>
-    <td class="notes">${esc([...new Set(x.reasons)].join("；")||"需人工确认")}</td><td>${esc(x.startRule||"-")}</td><td>${esc(x.source)}</td>
-  </tr>`).join(""):'<tr><td colspan="6" style="text-align:center;color:#667085">暂无被排除方案</td></tr>';
-
-  renderRecommendations(all,selected,placement,manual,total,complete);
-}
-function renderRecommendations(all,selected,placement,manual,total,complete){
-  let costPicks=[],speedPicks=[],balPicks=[];
-  shipmentData.forEach(s=>{
-    const a=all.filter(x=>x.shipId===s.id);
-    if(a.length){costPicks.push(selectForGoal(a,"cost"));speedPicks.push(selectForGoal(a,"speed"));balPicks.push(selectForGoal(a,"balanced"))}
-  });
-  const sum=picks=>picks.reduce((z,x)=>z+x.baseFreight+x.extra,0)+placement+manual;
-  const c=sum(costPicks),sp=sum(speedPicks),ba=sum(balPicks);
-  const card=(title,picks,val,klass)=>`<div class="advice-card ${klass||""}"><b>${title}</b><div style="font-size:20px;font-weight:800;margin:6px 0">${picks.length?money(val):"-"}</div>
-    <div>${picks.map(x=>`${esc(x.dest)}：${esc(x.channel)}`).join("<br>")||"无可用渠道"}</div></div>`;
-  $("recommendations").innerHTML=card("最低成本",costPicks,c,"")+card("最快可识别",speedPicks,sp,"")+card("成本时效平衡",balPicks,ba,"best");
-  const goal=$("goal").value,chosen=goal==="cost"?costPicks:(goal==="speed"?speedPicks:balPicks);
-  if(!chosen.length){$("mainAdvice").innerHTML='<span class="bad">当前货件没有找到满足起算点和限制条件的完整方案，请先看“被排除方案”的原因。</span>';return}
-  if(!complete){
-    const missing=shipmentData.filter(s=>!chosen.some(x=>x.shipId===s.id)).map(s=>s.fc||s.zip||"未命名货件");
-    $("mainAdvice").innerHTML=`<span class="bad"><b>当前分仓方案不完整：</b>${esc(missing.join("、"))} 没有可直接使用的运输渠道，因此不能把已匹配货件的成本当成整个方案总成本。请先处理这些货件的起算量、邮编或渠道限制。</span>`;
-    return;
-  }
-  let text=`当前按“${goal==="cost"?"最低成本":goal==="speed"?"最快优先":"成本时效平衡"}”选择：`;
-  text+=chosen.map(x=>`<b>${esc(x.dest)}</b> → ${esc(x.channel)}（${money(x.baseFreight+x.extra)}${x.timeText?`，${esc(x.timeText)}`:""}）`).join("；");
-  text+=`。<br>当前方案综合成本约 <b>${money(total)}</b>`;
-  if(placement)text+=`，其中 Amazon 入库配置费折人民币 ${money(placement)}`;
-  if(manual)text+=`，手填额外费用 ${money(manual)}`;
-  // Time-delta only within same basis for each dest
-  const deltas=[];
-  shipmentData.forEach(s=>{
-    const a=all.filter(x=>x.dest===(s.fc||s.zip||"未命名") && x.days);
-    const pick=chosen.find(x=>x.shipId===s.id);
-    if(!pick?.days)return;
-    const same=a.filter(x=>x.timeBasis===pick.timeBasis);
-    if(!same.length)return;
-    const fastest=[...same].sort((x,y)=>effectiveMaxDays(x)-effectiveMaxDays(y))[0];
-    if(fastest!==pick){
-      const pickMin=pick.days[0]+(pick.riskDelay?pick.riskDelay[0]:0),pickMax=effectiveMaxDays(pick);
-      const fastMin=fastest.days[0]+(fastest.riskDelay?fastest.riskDelay[0]:0),fastMax=effectiveMaxDays(fastest);
-      const d1=Math.max(0,pickMin-fastMin),d2=Math.max(0,pickMax-fastMax);
-      deltas.push(`${pick.dest} 当前方案相对同口径最快渠道约慢 ${d1}–${d2} 天`);
-    }
-  });
-  if(deltas.length)text+=`。<br><b>时效代价：</b>${esc(deltas.join("；"))}`;
-  text+=`。<br><span class="muted">“5日提取”和“20日签收”属于不同口径，系统不会直接相减。</span>`;
-  $("mainAdvice").innerHTML=text;
-}
-function saveInputs(){
-  const data={shipmentData,origin:$("origin").value,cargo:$("cargo").value,tax:$("tax").value,goal:$("goal").value,units:$("units").value,dayValue:$("dayValue").value,placement:$("placement").value,fx:$("fx").value,manualExtra:$("manualExtra").value,modeFilter:$("modeFilter").value,productNote:$("productNote").value};
-  localStorage.setItem("fba_v3_inputs",JSON.stringify(data));$("mainAdvice").innerHTML='<span class="ok">常用参数已保存在当前浏览器。</span>';
-}
-function loadInputs(){
-  try{
-    const d=JSON.parse(localStorage.getItem("fba_v3_inputs")||"null");if(!d)return;
-    shipmentData=d.shipmentData||shipmentData;["origin","cargo","tax","goal","units","dayValue","placement","fx","manualExtra","modeFilter","productNote"].forEach(k=>{if(d[k]!=null)$(k).value=d[k]});
-    renderShipments();$("mainAdvice").innerHTML='<span class="ok">已读取保存的常用参数。</span>';
-  }catch(e){}
-}
 </script>
 </body>
 </html>
